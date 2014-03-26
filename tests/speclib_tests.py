@@ -47,7 +47,7 @@ def test_math():	# Testing some of the mathematical routines
 	speclib.info("Execution complete!")
 	
 
-def test_Mesh1d():	# Testing the mesh generation (plotting is not tested here)
+def test_mesh1d():	# Testing the mesh generation (plotting is not tested here)
 	macroGrid, P, varList = numpy.array((0.0,1.0,2.0,3.0)), numpy.array((3,4,2)), ['T', 'pres', 'quality']	
 	myMesh1d = speclib.Mesh1d(macroGrid, P, varList)
 	
@@ -80,7 +80,7 @@ def testingProblem1el1v():	# Testing results for a simple problem (1 var, 1 elem
 	macroGrid, P, varList = numpy.array((0.0,2.0)), numpy.array((4)), ['f']
 	myMesh1d = speclib.Mesh1d(macroGrid, P, varList)
 
-	myProblem = speclib.LSProblemChildTest1el1v(myMesh1d)
+	myProblem = LSProblemChildTest1el1v(myMesh1d)
 
 	myProblem.residual = myProblem.computeResidual()
 	assert_almost_equal(myProblem.residual, 0)
@@ -116,7 +116,7 @@ def testingProblemNelNv():	# Testing a problem w/ multiple variables and element
 	myMesh1d = speclib.Mesh1d(macroGrid, P, varList)
 	print("myMesh1d = Mesh1d(macroGrid, P, varList)")
 
-	myProblem = speclib.LSProblemChildTestNelNv(myMesh1d)
+	myProblem = LSProblemChildTestNelNv(myMesh1d)
 	myProblem.residual = myProblem.computeResidual()
 	myProblem.plotSolution(['f','g'], 'testingProblemNelNv.pdf')
 
@@ -152,7 +152,7 @@ def testingProblemNonLinear():	# Testing iterative routine for solving a non-lin
 	print("macroGrid = %r - P = %r - varList = %r" % (macroGrid, P, varList))
 
 	myMesh1d = speclib.Mesh1d(macroGrid, P, varList)
-	myProblem = speclib.NonLinearProblemTest(myMesh1d)
+	myProblem = NonLinearProblemTest(myMesh1d)
 	myProblem.plotSolution(['f'], 'testingProblemNonLinear.pdf')
 
 	print("The residual for this problem is %04.2e" % myProblem.residual)
@@ -183,11 +183,11 @@ def testingProblemTorsional1v():	# Testing a torsional vibration problem (1 mass
 	# print("macroGrid = %r - P = %r - varList = %r" % (macroGrid, P, varList))
 
 	myMesh1d = speclib.Mesh1d(macroGrid, P, varList)
-	myProblem = speclib.TorsionalProblemTest(myMesh1d)
+	myProblem = TorsionalProblemTest(myMesh1d)
 	myProblem.plotSolution()#filename='testingProblemTorsional1v.pdf')
 
 	speclib.info("'TorsionalProblemTest.computeResidual()' does not work.")
-    # # The following line will not work because myProblem.opL and and myProblem.opG have been reduced to 1 element. The full info is not saved
+	# # The following line will not work because myProblem.opL and and myProblem.opG have been reduced to 1 element. The full info is not saved
 	# print("The residual for this problem is %04.2e" % myProblem.computeResidual())
 
 	myMemo = """
@@ -221,12 +221,12 @@ def testingProblemTorsionalNv():	# Testing a torsional vibration problem (N mass
 	print(varList)
 
 	myMesh1d = speclib.Mesh1d(macroGrid, P, varList)
-	myProblem = speclib.TorsionalProblemTestNv(myMesh1d)
+	myProblem = TorsionalProblemTestNv(myMesh1d)
 	myProblem.solveLinearSlab()
 	myProblem.plotSolution()#filename='testingProblemTorsionalNv.pdf')
 
 	speclib.info("'TorsionalProblemTestNv.computeResidual()' does not work.")
-    # # The following line will not work because myProblem.opL and and myProblem.opG have been reduced to 1 element. The full info is not saved
+	# # The following line will not work because myProblem.opL and and myProblem.opG have been reduced to 1 element. The full info is not saved
     # print("The residual for this problem is %04.2e" % myProblem.computeResidual())
 
 	myMemo = """
@@ -244,3 +244,193 @@ def testingProblemTorsionalNv():	# Testing a torsional vibration problem (N mass
 	print(myMemo + '\n' + "testingProblemTorsionalNv(): Execution complete!")
 
 	print("range(1,1) = %r" % range(1,1))
+
+
+
+# ********************************************************** #
+# ********************** TESTING CODE ********************** #
+# ********************************************************** #
+
+class LSProblemChildTest1el1v(speclib.LSProblem):
+	"""Class for testing a simple problem in 1 variable on 1 element."""
+	def __init__(self, theMesh):
+		super().__init__(theMesh)
+		self.solveLinear()
+	def setEquations(self, el):
+		opSize = len(self.mesh.GM[el]) / self.mesh.numberOfVariables
+		opL = {}; opG = {}
+
+		opL['f.f'] = self.mesh.Dx[el].dot(self.mesh.Dx[el])
+
+		opG['f'] = -1.0 * numpy.ones(opSize)
+
+		return opL, opG
+	def setBoundaryConditions(self):
+		weight = 1.0
+		leftValue = 3.0; rightValue = 3.0
+		self.Ke[0][0, 0] += weight
+		self.Ge[0][0] += weight * leftValue
+		self.Ke[-1][-1, -1] += weight
+		self.Ge[-1][-1] += weight * rightValue
+
+class LSProblemChildTestNelNv(speclib.LSProblem):
+	"""Class for testing a poisson problem in 2 variables on N elements."""
+	def __init__(self, theMesh):
+		super().__init__(theMesh)
+		self.solveLinear()
+	def setEquations(self, el):
+		opSize = len(self.mesh.GM[el]) / self.mesh.numberOfVariables
+		opL = {}; opG = {}
+
+		opL['f.f'] = self.mesh.Dx[el]
+		opL['f.g'] = -1.0 * numpy.identity(opSize)
+		opL['g.f'] = numpy.zeros((opSize, opSize))
+		opL['g.g'] = self.mesh.Dx[el]
+
+		opG['f'] = numpy.zeros(opSize)
+		opG['g'] = -1.0 * numpy.ones(opSize)
+
+		return opL, opG
+	def setBoundaryConditions(self):
+		weight = 1.0
+		leftValue = 3.0; rightValue = -1.0
+		self.Ke[0][0, 0] += weight
+		self.Ge[0][0] += weight * leftValue
+		self.Ke[-1][-1, -1] += weight
+		self.Ge[-1][-1] += weight * rightValue
+
+class NonLinearProblemTest(speclib.LSProblem):
+	"""Class for testing a poisson problem in 2 variables on N elements."""
+	def __init__(self, theMesh):
+		super().__init__(theMesh)
+		self.solveNonLinear()
+	def setEquations(self, el):
+		opSize = len(self.mesh.GM[el]) / self.mesh.numberOfVariables
+		opL = {}; opG = {}
+		x = self.mesh.x[self.mesh.GM[el]]
+
+		opL['f.f'] = numpy.diag(self.f[self.mesh.GM[el]]).dot(self.mesh.Dx[el])
+
+		opG['f'] = 2*x**3 - 6*x**2 + 2*x + 2
+
+		return opL, opG
+	def setBoundaryConditions(self):
+		weight = 1.0
+		leftValue = 1.0
+		self.Ke[0][0, 0] += weight
+		self.Ge[0][0] += weight * leftValue
+
+class TorsionalProblemTest(speclib.LSProblem):
+	"""Class for testing a torsional problem in N variables on N elements."""
+	def __init__(self, theMesh):
+		super().__init__(theMesh)
+		self.solveLinearSlab()
+	def setEquations(self, el):
+		opL = {}; opG = {}
+		opSize = len(self.mesh.GM[el]) / self.mesh.numberOfVariables
+		x = self.mesh.x[self.mesh.GM[el]]
+		Id = numpy.identity(opSize)
+		Zero = numpy.zeros(opSize)
+		Dx = self.mesh.Dx[el]
+		# f = numpy.diag(self.f[self.mesh.GM[el]]) # <--only for non-linear problems
+
+		m=1.0; c=0.2; k=1.0
+
+		opL['v0.v0'] = m*Dx + c*Id
+		opL['v0.x0'] = k*Id
+		opL['x0.v0'] = Id
+		opL['x0.x0'] = -Dx
+
+		opG['v0'] = Zero	#F
+		opG['x0'] = Zero	#
+
+		return opL, opG
+	def setBoundaryConditions(self):
+		weight = 1.0
+		initialSpeed = 0.0; initialPosition = 5.0
+		self.Ke[0][0, 0] += weight
+		self.Ge[0][0] += weight * initialSpeed
+		self.Ke[0][5, 5] += weight
+		self.Ge[0][5] += weight * initialPosition
+
+class TorsionalProblemTestNv(speclib.LSProblem):
+	"""Class for testing a torsional problem in N variables on N elements."""
+	def setEquations(self, el):
+		opL = {}; opG = {}
+		opSize = len(self.mesh.GM[el]) / self.mesh.numberOfVariables
+		x = self.mesh.x[self.mesh.GM[el][:opSize]]
+		Id = numpy.identity(opSize)
+		Zero = numpy.zeros(opSize)
+		Dx = self.mesh.Dx[el]
+		# f = numpy.diag(self.f[self.mesh.GM[el]]) # <--only for non-linear problems
+
+		m=[2.0, 4.0, 3.0, 10.0]
+		c_abs=[1.0, 0.0, 0.0, 0.0]
+		c=[0.0, 0.0, 0.0]
+		k=[2.0, 7.0, 6.0]
+
+
+		i = 0
+		vi='v0'; vip1='v1'
+		xi='x0'; xip1='x1'
+
+		opL[vi +'.'+ vi] = m[i]*Dx + (c[i]+c_abs[i])*Id
+		opL[vi +'.'+ xi] = k[i]*Id
+		opL[vi +'.'+ vip1] = -1.0*c[i]*Id
+		opL[vi +'.'+ xip1] = -1.0*k[i]*Id
+
+		opL[xi +'.'+ vi] = -1.0*Id
+		opL[xi +'.'+ xi] = Dx
+
+		opG[vi] = numpy.sin(x/10.0)	#F_1
+
+
+		n = int(self.mesh.numberOfVariables/2 - 1)
+		for mass in range(1, n):
+			vim1='v'+str(n-1); vi='v'+str(n); vip1='v'+str(n+1)
+			xim1='x'+str(n-1); xi='x'+str(n); xip1='x'+str(n+1)
+
+			opL[vi +'.'+ vim1] = -1.0*c[i-1]*Id
+			opL[vi +'.'+ xim1] = -1.0*k[i-1]*Id
+			opL[vi +'.'+ vi] = m[i]*Dx + (c[i-1]+c[i]+c_abs[i])*Id
+			opL[vi +'.'+ xi] = (k[i-1]+k[i])*Id
+			opL[vi +'.'+ vip1] = -1.0*c[i]*Id
+			opL[vi +'.'+ xip1] = -1.0*k[i]*Id
+
+			opL[xi +'.'+ vi] = -1.0*Id
+			opL[xi +'.'+ xi] = Dx
+
+
+		vim1='v'+str(n-1); vi='v'+str(n)
+		xim1='x'+str(n-1); xi='x'+str(n)
+
+		opL[vi +'.'+ vim1] = -1.0*c[n-1]*Id
+		opL[vi +'.'+ xim1] = -1.0*k[n-1]*Id
+		opL[vi +'.'+ vi] = m[n]*Dx + (c[n-1]+c_abs[n])*Id
+		opL[vi +'.'+ xi] = k[n-1]*Id
+		opL[xi +'.'+ vi] = -1.0*Id
+		opL[xi +'.'+ xi] = Dx
+
+		opG[vi] = Zero	#F_n
+
+		return opL, opG
+	def setBoundaryConditions(self):
+		initialSpeed = 0.0
+		initialPosition = 0.0
+
+		weight = 10.0
+		x0index = self.mesh.elementOrders[0] + 1
+
+		self.Ke[0][0, 0] += weight
+		self.Ge[0][0] += weight * initialSpeed
+		self.Ke[0][x0index, x0index] += weight
+		self.Ge[0][x0index] += weight * initialPosition
+
+
+# test_math()
+# test_mesh1d()
+# testingProblem1el1v()
+# testingProblemNelNv()
+# testingProblemNonLinear()
+# testingProblemTorsional1v()
+# testingProblemTorsionalNv()
