@@ -64,12 +64,12 @@ def test_mesh1d():    # Testing the mesh generation (plotting is not tested here
 
     integralTestValue = 0
     for el in range(myMesh1d.number_of_elements):
-        integralTestValue += myMesh1d.quadPoints[el].dot(myMesh1d.quadWeights[el])
+        integralTestValue += myMesh1d.quadrature_points[el].dot(myMesh1d.quadrature_weights[el])
         assert_almost_equal(myMesh1d.Jx[el], (myMesh1d.x[myMesh1d.GM1v[el][-1]]-myMesh1d.x[myMesh1d.GM1v[el][0]])/2.0 )
         numpy.testing.assert_array_equal(myMesh1d.GM[el][:myMesh1d.element_orders[el]+1], myMesh1d.GM1v[el])
-        numpy.testing.assert_array_equal(myMesh1d.quadPoints[el], myMesh1d.x[myMesh1d.GM1v[el]])
+        numpy.testing.assert_array_equal(myMesh1d.quadrature_points[el], myMesh1d.x[myMesh1d.GM1v[el]])
         numpy.testing.assert_array_equal(myMesh1d.Dx[el], speclib.lagrange_derivative_matrix_gll(myMesh1d.element_orders[el]+1)/myMesh1d.Jx[el])
-        numpy.testing.assert_array_equal(myMesh1d.longQuadWeights[el], numpy.tile(myMesh1d.quadWeights[el], myMesh1d.number_of_variables))
+        numpy.testing.assert_array_equal(myMesh1d.long_quadrature_weights[el], numpy.tile(myMesh1d.quadrature_weights[el], myMesh1d.number_of_variables))
         posVarTestValue = []
         for var in myMesh1d.list_of_variables:
             posVarTestValue = numpy.append(posVarTestValue, myMesh1d.pos[el][var])

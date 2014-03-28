@@ -400,37 +400,37 @@ class Mesh1d(object):
 
         self.setGM1d()
 
-        self.quadWeights = []
-        self.quadPoints = []
+        self.quadrature_weights = []
+        self.quadrature_points = []
         self.Jx = []
         self.Dx = []
         self.x = numpy.zeros(self.dof1v)
-        self.longQuadWeights = []
+        self.long_quadrature_weights = []
         self.pos = []
         for el_ in range(self.number_of_elements):
-            lowElemBoundary = self.macro_nodes[el_]
-            uppElemBoundary = self.macro_nodes[el_+1]
-            self.Jx.append( (uppElemBoundary - lowElemBoundary) / 2.0 )
-            self.Dx.append( lagrange_derivative_matrix_gll(self.element_orders[el_]+1) / self.Jx[el_] )
-            qx, qw = gll(self.element_orders[el_]+1, lowElemBoundary, uppElemBoundary)
-            self.quadPoints.append(qx)    # x coordinate (quad points)
-            self.quadWeights.append(qw)    # quadrature weights
-            longQw = numpy.tile(qw, self.number_of_variables)
-            self.longQuadWeights.append(longQw)
+            lower_element_boundary = self.macro_nodes[el_]
+            upper_element_boundary = self.macro_nodes[el_+1]
+            self.Jx.append((upper_element_boundary - lower_element_boundary) / 2.0)
+            self.Dx.append(lagrange_derivative_matrix_gll(self.element_orders[el_]+1) / self.Jx[el_])
+            qx, qw = gll(self.element_orders[el_]+1, lower_element_boundary, upper_element_boundary)
+            self.quadrature_points.append(qx)    # x coordinate (quad points)
+            self.quadrature_weights.append(qw)    # quadrature weights
+            long_qw = numpy.tile(qw, self.number_of_variables)
+            self.long_quadrature_weights.append(long_qw)
             self.pos.append({})
             for var_ in range(self.number_of_variables):
-                firstNodeInVar = var_ * len(self.GM1v[el_])
-                lastNodeInVar = firstNodeInVar + len(self.GM1v[el_])
-                self.pos[el_][self.list_of_variables[var_]] = numpy.arange(firstNodeInVar, lastNodeInVar)
+                first_node_in_element = var_ * len(self.GM1v[el_])
+                last_node_in_element = first_node_in_element + len(self.GM1v[el_])
+                self.pos[el_][self.list_of_variables[var_]] = numpy.arange(first_node_in_element, last_node_in_element)
             self.x[self.GM1v[el_]] = qx
 
         self.x = numpy.tile(self.x, self.number_of_variables)
 
-    def plotMesh(self):
+    def plot_mesh(self):
         # Plot nodes and line
         xMicro = self.x
         xMacro = self.macro_nodes
-        matplotlib.pyplot.plot((xMacro[0], xMacro[-1]), (0,0), 'r--', linewidth=2.0)    # Lines
+        matplotlib.pyplot.plot((xMacro[0], xMacro[-1]), (0, 0), 'r--', linewidth=2.0)    # Lines
         matplotlib.pyplot.plot(xMicro, xMicro*0, 'ro')    # Nodes (micro)
         matplotlib.pyplot.plot(xMacro, xMacro*0, 'bs', markersize=10)    # Nodes (macro)
 
@@ -438,12 +438,12 @@ class Mesh1d(object):
         for node_ in range(self.dof1v):
             matplotlib.pyplot.text(self.x[node_], -0.1, str(node_), fontsize=10, color='red')
         for border_ in range(len(xMacro)-1):
-            elemCenter = ( xMacro[border_] + xMacro[border_+1] ) / 2.0
-            matplotlib.pyplot.text(elemCenter, +0.1, str(border_), fontsize=15, color='blue')
+            element_center = ( xMacro[border_] + xMacro[border_+1] ) / 2.0
+            matplotlib.pyplot.text(element_center, +0.1, str(border_), fontsize=15, color='blue')
 
         # Write annotations
-        firstElementCenter = ( xMacro[0] + xMacro[1] ) / 2.0
-        matplotlib.pyplot.annotate('element numbers', xy=(firstElementCenter, 0.17), xytext=(firstElementCenter, 0.3), arrowprops=dict(facecolor='black', shrink=0.05))
+        first_element_center = ( xMacro[0] + xMacro[1] ) / 2.0
+        matplotlib.pyplot.annotate('element numbers', xy=(first_element_center, 0.17), xytext=(first_element_center, 0.3), arrowprops=dict(facecolor='black', shrink=0.05))
         matplotlib.pyplot.annotate('node number', xy=(xMicro[1], -0.12), xytext=(xMicro[1], -0.3), arrowprops=dict(facecolor='black', shrink=0.05))
         matplotlib.pyplot.text((xMacro[0]+xMacro[-1])/4.0, -0.9, 'Degrees of freedom per variable: %d\nTotal degrees of freedom: %d\nNumber of elements: %d\nVariables: %d %s' %(self.dof1v, self.dofNv, self.number_of_elements, self.number_of_variables, self.list_of_variables))
         matplotlib.pyplot.title('1-D mesh information')

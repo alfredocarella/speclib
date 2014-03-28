@@ -12,18 +12,19 @@ class LSProblem(object):
     def __init__(self, theMesh):
         self.mesh = theMesh
 
-    def computeResidual(self, listOfElements=None):
+    def computeResidual(self, list_of_elements=None):
         """Compute the Least-Squares total residual."""
 
-        if listOfElements == None:     listOfElements = range(len(self.mesh.GM))
+        if list_of_elements is None:
+            list_of_elements = range(len(self.mesh.GM))
 
         residual = 0.0
-        for el_ in listOfElements:
-            W = self.mesh.longQuadWeights[el_]
+        for el_ in list_of_elements:
+            W = self.mesh.long_quadrature_weights[el_]
             GM = self.mesh.GM[el_]
             opG = self.opG[el_]
             opL = self.opL[el_]
-            residual += W.dot((opL.dot(self.f[GM])-opG)**2)    #Int[(Lf-G)**2] + [f_a-f(a)]**2   <---The second term is missing. Therefore this formulation does not currently consider compliance with boundary conditions!
+            residual += W.dot((opL.dot(self.f[GM])-opG)**2)  # Int[(Lf-G)**2] + [f_a-f(a)]**2   <---The second term is missing. Therefore this formulation does not currently consider compliance with boundary conditions!
         return residual
 
     def plotSolution(self, varList=None, filename=None):  # TODO: This routine still needs to be polished and documented
@@ -112,9 +113,9 @@ class LSProblem(object):
 
             # Generate problem sub-matrices
             elemNodes = self.mesh.GM[elem]
-            LW = self.opL[el_].T.dot(numpy.diag(self.mesh.longQuadWeights[elem]))
-            self.Ke.append( LW.dot(self.opL[el_]) )
-            self.Ge.append( LW.dot(self.opG[el_]) )
+            LW = self.opL[el_].T.dot(numpy.diag(self.mesh.long_quadrature_weights[elem]))
+            self.Ke.append(LW.dot(self.opL[el_]))
+            self.Ge.append(LW.dot(self.opG[el_]))
 
     def setSolution(self, f):
         self.fOld = f
