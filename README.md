@@ -1,4 +1,6 @@
 speclib
 =======
 
-Work in progress - Python
+Spectral / Finite Element library
+
+Work in progress

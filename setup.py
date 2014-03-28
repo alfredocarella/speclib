@@ -1,19 +1,19 @@
 try:
-	from setuptools import setup
+    from setuptools import setup
 except ImportError:
-	from distutils.core import setup
+    from distutils.core import setup
 
 config = {
-	'description': 'Socrates - Spectral Finite Element solver',
-	'author': 'Alfredo Carella',
-#	'url': 'URL to get it at.',
-#	'download_url': 'Where to download it.',
-	'author_email': 'alfredocarella@gmail.com',
-	'version': '0.1',
-	'install_requires': ['nose'],
-	'packages': ['solverls'],
-	'scripts': [],
-	'name': 'Socrates'
+    'description': 'Spectral / Finite Element library',
+    'author': 'Alfredo Carella',
+    'url': 'https://github.com/alfredocarella/speclib.git',
+    # 'download_url': 'Where to download it.',
+    'author_email': 'alfredocarella@gmail.com',
+    'version': '0.1',
+    'install_requires': ['nose'],
+    'packages': ['solverls'],
+    'scripts': [],
+    'name': 'speclib'
 }
 
 setup(**config)
