@@ -8,15 +8,15 @@ import matplotlib.pyplot
 # ********************** LIBRARY CODE ********************** #
 # ********************************************************** #
 
-def conj_grad_elem(k_elem, Ge, GM, dof, x=None, TOL=1.0e-12):
+def conj_grad_elem(k_elem, Ge, gm, dof, x=None, TOL=1.0e-12):
     """
     Attempts to solve the system of linear equations A*x=b for x. The dof-by-dof coefficient matrix A must be symmetric and positive definite (SPD), and should also be large and sparse. 
-    The matrix A is only filled across squared blocks on its main diagonal, as results from a finite-element problem. The list Ke contains the non-empty blocks on matrix A, whose lengths need to match the lengths of the vectors in Ge. The list in GM is the gathering matrix specifying the position of Ke blocks in the matrix A and Ge blocks in vector b.
+    The matrix A is only filled across squared blocks on its main diagonal, as results from a finite-element problem. The list Ke contains the non-empty blocks on matrix A, whose lengths need to match the lengths of the vectors in Ge. The list in gm is the gathering matrix specifying the position of Ke blocks in the matrix A and Ge blocks in vector b.
                    
-    Syntax: x = conjGradElem(Ke, Ge, GM, dof, x=None, TOL=1.0e-9)
+    Syntax: x = conjGradElem(Ke, Ge, gm, dof, x=None, TOL=1.0e-9)
     <list>    Ke = list of dof-by-dof <numpy.ndarray> matrices (must be SPD)
     <list>    Ge = a list of dof-length <numpy.array> vectors
-    <list>    GM = a list of the nodes belonging to each element
+    <list>    gm = a list of the nodes belonging to each element
     <int>    dof = degrees of freedom of the full system of equations
     <numpy.array>    x = initial iteration value for solution (default is zeros)
     
@@ -26,34 +26,34 @@ def conj_grad_elem(k_elem, Ge, GM, dof, x=None, TOL=1.0e-12):
     if x is None:
         x = numpy.zeros(dof)
 
-    number_of_elements = len(GM)
+    number_of_elements = len(gm)
 
-    # r = loc2gbl(Ge, GM, dof) - loc2gblMatrixVector(Ke, gbl2loc(x, GM), GM, dof)
+    # r = loc2gbl(Ge, gm, dof) - loc2gblMatrixVector(Ke, gbl2loc(x, gm), gm, dof)
     r = numpy.zeros(dof)
     for el_ in range(number_of_elements):
-        mat_vec_local_product = k_elem[el_].dot(x[GM[el_]])
-        local_index = numpy.arange(len(GM[el_]))
-        r[GM[el_]] += Ge[el_][local_index] - mat_vec_local_product[local_index]
+        mat_vec_local_product = k_elem[el_].dot(x[gm[el_]])
+        local_index = numpy.arange(len(gm[el_]))
+        r[gm[el_]] += Ge[el_][local_index] - mat_vec_local_product[local_index]
 
     s = r.copy()
     for i in range(dof):
 
-        # u = loc2gblMatrixVector(Ke, gbl2loc(s, GM), GM, dof)
+        # u = loc2gblMatrixVector(Ke, gbl2loc(s, gm), gm, dof)
         u = numpy.zeros(dof)
         for el_ in range(number_of_elements):
-            r_elem = k_elem[el_].dot(s[GM[el_]])
-            local_index = numpy.arange(len(GM[el_]))
-            u[GM[el_]] += r_elem[local_index]
+            r_elem = k_elem[el_].dot(s[gm[el_]])
+            local_index = numpy.arange(len(gm[el_]))
+            u[gm[el_]] += r_elem[local_index]
 
         alpha = s.dot(r) / s.dot(u)
         x = x + alpha * s
 
-        # r = loc2gbl(Ge, GM, dof) - loc2gblMatrixVector(Ke, gbl2loc(x, GM), GM, dof)
+        # r = loc2gbl(Ge, gm, dof) - loc2gblMatrixVector(Ke, gbl2loc(x, gm), gm, dof)
         r = numpy.zeros(dof)
         for el_ in range(number_of_elements):
-            mat_vec_local_product = k_elem[el_].dot(x[GM[el_]])
-            local_index = numpy.arange(len(GM[el_]))
-            r[GM[el_]] += Ge[el_][local_index] - mat_vec_local_product[local_index]
+            mat_vec_local_product = k_elem[el_].dot(x[gm[el_]])
+            local_index = numpy.arange(len(gm[el_]))
+            r[gm[el_]] += Ge[el_][local_index] - mat_vec_local_product[local_index]
 
         if math.sqrt(r.dot(r)) < TOL:
             break
@@ -335,10 +335,10 @@ class Iterator(object):
             set_boundary_conditions()
             problem.f_old = problem.f.copy()
 
-            if len(problem.mesh.GM[0]) == problem.mesh.dofNv:
+            if len(problem.mesh.gm[0]) == problem.mesh.dof_nv:
                 problem.f, num_cg_it = conj_grad(problem.Ke[0], problem.Ge[0])
             else:
-                problem.f, num_cg_it = conj_grad_elem(problem.Ke, problem.Ge, problem.mesh.GM, problem.mesh.dofNv)
+                problem.f, num_cg_it = conj_grad_elem(problem.Ke, problem.Ge, problem.mesh.gm, problem.mesh.dof_nv)
 
             problem.residual = problem.computeResidual(list_of_elements)
             self.delta = numpy.linalg.norm(problem.f - problem.f_old) / numpy.linalg.norm(problem.f)
@@ -373,9 +373,9 @@ class Mesh1d(object):
     Mesh1d.listOfVariables
     Mesh1d.numberOfVariables
     Mesh1d.dof1v
-    Mesh1d.dofNv
-    Mesh1d.GM
-    Mesh1d.GM1v
+    Mesh1d.dof_nv
+    Mesh1d.gm
+    Mesh1d.gm_1v
     Mesh1d.quadWeights
     Mesh1d.quadPoints
     Mesh1d.Jx
@@ -387,7 +387,7 @@ class Mesh1d(object):
     macroGrid, P, NV = numpy.array((0.0,1.0,2.0,3.0)), numpy.array((3,4,2)), 2
     myMesh1d = Mesh1d(macroGrid, P, NV)
     print("myMesh1d.Dx[0] = \n%r" % myMesh1d.Dx[0])
-    print("myMesh1d.x[myMesh1d.GM1v[0]] = %r" % myMesh1d.x[myMesh1d.GM1v[0]])
+    print("myMesh1d.x[myMesh1d.gm1v[0]] = %r" % myMesh1d.x[myMesh1d.gm_1v[0]])
     print("myMesh1d.Dx[0].dot(myMesh1d.quadPoints[0]) = \n%r\" % myMesh1d.Dx[0].dot(myMesh1d.quadPoints[0]))
     """
 
@@ -397,14 +397,29 @@ class Mesh1d(object):
         self.number_of_elements = len(self.element_orders)
         self.list_of_variables = variable_names
         self.number_of_variables = len(self.list_of_variables)
+        self.dof_1v = numpy.sum(self.element_orders)+1
+        self.dof_nv = self.dof_1v * self.number_of_variables
 
-        self.setGM1d()
+        self.gm = []
+        self.gm_1v = []
+        node_counter = 0
+        for el_ in range(self.number_of_elements):
+            elementSize = self.number_of_variables * (self.element_orders[el_]+1)
+            self.gm.append(numpy.zeros(elementSize, dtype=numpy.int))
+            for var_ in range(self.number_of_variables):
+                firstVarPos = var_ * (self.element_orders[el_]+1)
+                lastVarPos = firstVarPos + self.element_orders[el_]
+                firstVarNumber = var_ * self.dof_1v + node_counter
+                lastVarNumber = firstVarNumber + self.element_orders[el_]
+                self.gm[el_][firstVarPos : lastVarPos + 1] = numpy.arange(firstVarNumber, lastVarNumber + 1)
+            node_counter += self.element_orders[el_]
+            self.gm_1v.append( self.gm[el_][0 : self.element_orders[el_]+1] )
 
         self.quadrature_weights = []
         self.quadrature_points = []
         self.Jx = []
         self.Dx = []
-        self.x = numpy.zeros(self.dof1v)
+        self.x = numpy.zeros(self.dof_1v)
         self.long_quadrature_weights = []
         self.pos = []
         for el_ in range(self.number_of_elements):
@@ -419,55 +434,34 @@ class Mesh1d(object):
             self.long_quadrature_weights.append(long_qw)
             self.pos.append({})
             for var_ in range(self.number_of_variables):
-                first_node_in_element = var_ * len(self.GM1v[el_])
-                last_node_in_element = first_node_in_element + len(self.GM1v[el_])
+                first_node_in_element = var_ * len(self.gm_1v[el_])
+                last_node_in_element = first_node_in_element + len(self.gm_1v[el_])
                 self.pos[el_][self.list_of_variables[var_]] = numpy.arange(first_node_in_element, last_node_in_element)
-            self.x[self.GM1v[el_]] = qx
+            self.x[self.gm_1v[el_]] = qx
 
         self.x = numpy.tile(self.x, self.number_of_variables)
 
     def plot_mesh(self):
         # Plot nodes and line
-        xMicro = self.x
-        xMacro = self.macro_nodes
-        matplotlib.pyplot.plot((xMacro[0], xMacro[-1]), (0, 0), 'r--', linewidth=2.0)    # Lines
-        matplotlib.pyplot.plot(xMicro, xMicro*0, 'ro')    # Nodes (micro)
-        matplotlib.pyplot.plot(xMacro, xMacro*0, 'bs', markersize=10)    # Nodes (macro)
+        micro_grid = self.x
+        macro_grid = self.macro_nodes
+        matplotlib.pyplot.plot((macro_grid[0], macro_grid[-1]), (0, 0), 'r--', linewidth=2.0)    # Lines
+        matplotlib.pyplot.plot(micro_grid, micro_grid*0, 'ro')    # Nodes (micro)
+        matplotlib.pyplot.plot(macro_grid, macro_grid*0, 'bs', markersize=10)    # Nodes (macro)
 
         # Plot node and element numbers
-        for node_ in range(self.dof1v):
+        for node_ in range(self.dof_1v):
             matplotlib.pyplot.text(self.x[node_], -0.1, str(node_), fontsize=10, color='red')
-        for border_ in range(len(xMacro)-1):
-            element_center = ( xMacro[border_] + xMacro[border_+1] ) / 2.0
+        for border_ in range(len(macro_grid)-1):
+            element_center = (macro_grid[border_] + macro_grid[border_+1]) / 2.0
             matplotlib.pyplot.text(element_center, +0.1, str(border_), fontsize=15, color='blue')
 
         # Write annotations
-        first_element_center = ( xMacro[0] + xMacro[1] ) / 2.0
+        first_element_center = ( macro_grid[0] + macro_grid[1] ) / 2.0
         matplotlib.pyplot.annotate('element numbers', xy=(first_element_center, 0.17), xytext=(first_element_center, 0.3), arrowprops=dict(facecolor='black', shrink=0.05))
-        matplotlib.pyplot.annotate('node number', xy=(xMicro[1], -0.12), xytext=(xMicro[1], -0.3), arrowprops=dict(facecolor='black', shrink=0.05))
-        matplotlib.pyplot.text((xMacro[0]+xMacro[-1])/4.0, -0.9, 'Degrees of freedom per variable: %d\nTotal degrees of freedom: %d\nNumber of elements: %d\nVariables: %d %s' %(self.dof1v, self.dofNv, self.number_of_elements, self.number_of_variables, self.list_of_variables))
+        matplotlib.pyplot.annotate('node number', xy=(micro_grid[1], -0.12), xytext=(micro_grid[1], -0.3), arrowprops=dict(facecolor='black', shrink=0.05))
+        matplotlib.pyplot.text((macro_grid[0]+macro_grid[-1])/4.0, -0.9, 'Degrees of freedom per variable: %d\nTotal degrees of freedom: %d\nNumber of elements: %d\nVariables: %d %s' %(self.dof_1v, self.dof_nv, self.number_of_elements, self.number_of_variables, self.list_of_variables))
         matplotlib.pyplot.title('1-D mesh information')
         matplotlib.pyplot.xlabel("Independent variable coordinate")
-        matplotlib.pyplot.axis([xMacro[0], xMacro[-1], -1, 1])
+        matplotlib.pyplot.axis([macro_grid[0], macro_grid[-1], -1, 1])
         matplotlib.pyplot.show()
-
-    def setGM1d(self):
-        self.dof1v = numpy.sum(self.element_orders)+1
-        self.dofNv = self.dof1v * self.number_of_variables
-
-        nodeCnt1v_ = 0
-        self.GM = []
-        self.GM1v = []
-        for el_ in range(self.number_of_elements):
-            elementSize = self.number_of_variables * (self.element_orders[el_]+1)
-            self.GM.append(numpy.zeros(elementSize, dtype=numpy.int))
-            for var_ in range(self.number_of_variables):
-                firstVarPos = var_ * (self.element_orders[el_]+1)
-                lastVarPos = firstVarPos + self.element_orders[el_]
-                firstVarNumber = var_ * self.dof1v + nodeCnt1v_
-                lastVarNumber = firstVarNumber + self.element_orders[el_]
-                self.GM[el_][firstVarPos : lastVarPos + 1] = numpy.arange(firstVarNumber, lastVarNumber + 1)
-            nodeCnt1v_ += self.element_orders[el_]
-            self.GM1v.append( self.GM[el_][0 : self.element_orders[el_]+1] )
-
-

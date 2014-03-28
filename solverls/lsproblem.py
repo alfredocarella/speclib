@@ -16,15 +16,15 @@ class LSProblem(object):
         """Compute the Least-Squares total residual."""
 
         if list_of_elements is None:
-            list_of_elements = range(len(self.mesh.GM))
+            list_of_elements = range(len(self.mesh.gm))
 
         residual = 0.0
         for el_ in list_of_elements:
             W = self.mesh.long_quadrature_weights[el_]
-            GM = self.mesh.GM[el_]
+            gm = self.mesh.gm[el_]
             opG = self.opG[el_]
             opL = self.opL[el_]
-            residual += W.dot((opL.dot(self.f[GM])-opG)**2)  # Int[(Lf-G)**2] + [f_a-f(a)]**2   <---The second term is missing. Therefore this formulation does not currently consider compliance with boundary conditions!
+            residual += W.dot((opL.dot(self.f[gm])-opG)**2)  # Int[(Lf-G)**2] + [f_a-f(a)]**2   <---The second term is missing. Therefore this formulation does not currently consider compliance with boundary conditions!
         return residual
 
     def plotSolution(self, varList=None, filename=None):  # TODO: This routine still needs to be polished and documented
@@ -39,7 +39,7 @@ class LSProblem(object):
             xOut = numpy.zeros([])
             yOut = numpy.zeros([])
             for elem in range(self.mesh.number_of_elements):
-                varIndices = self.mesh.GM[elem][self.mesh.pos[elem][varName]]
+                varIndices = self.mesh.gm[elem][self.mesh.pos[elem][varName]]
                 xInElem = self.mesh.x[varIndices]
                 yInElem = self.f[varIndices]
                 xOutElem = numpy.linspace(self.mesh.macro_nodes[elem], self.mesh.macro_nodes[elem+1], 10)
@@ -72,7 +72,7 @@ class LSProblem(object):
         weight = 1.0
         for varName in self.mesh.list_of_variables:
 
-            finalValueIndices = self.mesh.GM[elem-1][self.mesh.pos[elem-1][varName]]
+            finalValueIndices = self.mesh.gm[elem-1][self.mesh.pos[elem-1][varName]]
             initialValueIndices = self.mesh.pos[elem][varName]
             f_index = finalValueIndices[-1]
             gk_index = initialValueIndices[0]
@@ -98,7 +98,7 @@ class LSProblem(object):
         # Create the operators
         for elem in list_of_elements:
             el_ = list_of_elements.index(elem)
-            elemSize = len(self.mesh.GM[elem])
+            elemSize = len(self.mesh.gm[elem])
             self.opL.append( numpy.zeros((elemSize, elemSize)) )
             self.opG.append( numpy.zeros((elemSize)) )
 
@@ -112,7 +112,7 @@ class LSProblem(object):
                     self.opG[el_][self.mesh.pos[elem][varRow_]] += opG_dict[varRow_]
 
             # Generate problem sub-matrices
-            elemNodes = self.mesh.GM[elem]
+            elemNodes = self.mesh.gm[elem]
             LW = self.opL[el_].T.dot(numpy.diag(self.mesh.long_quadrature_weights[elem]))
             self.Ke.append(LW.dot(self.opL[el_]))
             self.Ge.append(LW.dot(self.opG[el_]))
@@ -126,7 +126,7 @@ class LSProblem(object):
         # it.iteratePicard(self, self.setOperators, self.setBoundaryConditions)
         self.setOperators()
         self.setBoundaryConditions()
-        self.f, numIters = conj_grad_elem(self.Ke, self.Ge, self.mesh.GM, self.mesh.dofNv)
+        self.f, numIters = conj_grad_elem(self.Ke, self.Ge, self.mesh.gm, self.mesh.dof_nv)
 
     def solveNonLinear(self):
         self.f = self.mesh.x    # or even --> numpy.ones(len(self.mesh.x))
@@ -136,18 +136,18 @@ class LSProblem(object):
         print("Iterations: %r  -  Residual: %04.2e  -  delta = %04.2e" % (it.number_of_iterations, self.residual, it.delta))
 
     def solveLinearSlab(self):
-        self.f = numpy.zeros(self.mesh.dofNv)
+        self.f = numpy.zeros(self.mesh.dof_nv)
 
         self.setOperators([0])
         self.setBoundaryConditions()
         f_elem, numIters = conj_grad(self.Ke[0], self.Ge[0])
-        self.f[self.mesh.GM[0]] = f_elem
+        self.f[self.mesh.gm[0]] = f_elem
 
         for el_ in range(1,self.mesh.number_of_elements):
             self.setOperators([el_])
             self.setSlabBoundaryConditions(el_)
             f_elem, numIters = conj_grad(self.Ke[0], self.Ge[0])
-            self.f[self.mesh.GM[el_]] = f_elem
+            self.f[self.mesh.gm[el_]] = f_elem
 
     def solveNonLinearSlab(self):  # TODO: Would be very useful, but it is complex to implement right now
         pass

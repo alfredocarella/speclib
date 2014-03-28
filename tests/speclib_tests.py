@@ -57,23 +57,23 @@ def test_mesh1d():    # Testing the mesh generation (plotting is not tested here
     assert_equal(myMesh1d.list_of_variables, varList)
     assert_equal(myMesh1d.number_of_elements, len(myMesh1d.element_orders))
     assert_equal(myMesh1d.number_of_variables, len(myMesh1d.list_of_variables))
-    assert_equal(myMesh1d.dof1v, sum(myMesh1d.element_orders)+1)
-    assert_equal(myMesh1d.dofNv, myMesh1d.number_of_variables*myMesh1d.dof1v)
-    assert_equal(len(myMesh1d.GM), myMesh1d.number_of_elements)
-    assert_equal(len(myMesh1d.GM1v), myMesh1d.number_of_elements)
+    assert_equal(myMesh1d.dof_1v, sum(myMesh1d.element_orders)+1)
+    assert_equal(myMesh1d.dof_nv, myMesh1d.number_of_variables*myMesh1d.dof_1v)
+    assert_equal(len(myMesh1d.gm), myMesh1d.number_of_elements)
+    assert_equal(len(myMesh1d.gm_1v), myMesh1d.number_of_elements)
 
     integralTestValue = 0
     for el in range(myMesh1d.number_of_elements):
         integralTestValue += myMesh1d.quadrature_points[el].dot(myMesh1d.quadrature_weights[el])
-        assert_almost_equal(myMesh1d.Jx[el], (myMesh1d.x[myMesh1d.GM1v[el][-1]]-myMesh1d.x[myMesh1d.GM1v[el][0]])/2.0 )
-        numpy.testing.assert_array_equal(myMesh1d.GM[el][:myMesh1d.element_orders[el]+1], myMesh1d.GM1v[el])
-        numpy.testing.assert_array_equal(myMesh1d.quadrature_points[el], myMesh1d.x[myMesh1d.GM1v[el]])
+        assert_almost_equal(myMesh1d.Jx[el], (myMesh1d.x[myMesh1d.gm_1v[el][-1]]-myMesh1d.x[myMesh1d.gm_1v[el][0]])/2.0 )
+        numpy.testing.assert_array_equal(myMesh1d.gm[el][:myMesh1d.element_orders[el]+1], myMesh1d.gm_1v[el])
+        numpy.testing.assert_array_equal(myMesh1d.quadrature_points[el], myMesh1d.x[myMesh1d.gm_1v[el]])
         numpy.testing.assert_array_equal(myMesh1d.Dx[el], speclib.lagrange_derivative_matrix_gll(myMesh1d.element_orders[el]+1)/myMesh1d.Jx[el])
         numpy.testing.assert_array_equal(myMesh1d.long_quadrature_weights[el], numpy.tile(myMesh1d.quadrature_weights[el], myMesh1d.number_of_variables))
         posVarTestValue = []
         for var in myMesh1d.list_of_variables:
             posVarTestValue = numpy.append(posVarTestValue, myMesh1d.pos[el][var])
-        numpy.testing.assert_array_equal(posVarTestValue, range(len(myMesh1d.GM[el])))
+        numpy.testing.assert_array_equal(posVarTestValue, range(len(myMesh1d.gm[el])))
     assert_almost_equal(integralTestValue, (myMesh1d.macro_nodes[-1]-myMesh1d.macro_nodes[0])**2 /2)
         
     
@@ -124,7 +124,7 @@ def testingProblemNelNv():    # Testing a problem w/ multiple variables and elem
     # print("myProblem.opL = %r" % myProblem.opL)
     # print("myProblem.opG = %r" % myProblem.opG)
     # print("myProblem.mesh.Dx = %r" % myProblem.mesh.Dx)
-    # print("myProblem.mesh.GM = %r" % myProblem.mesh.GM)
+    # print("myProblem.mesh.gm = %r" % myProblem.mesh.gm)
 
     # print('\nThe "elemGM" solution vector is %r\n' % (myProblem.f))
     print("The residual for this problem is %04.2e" % myProblem.residual)
@@ -258,7 +258,7 @@ class LSProblemChildTest1el1v(LSProblem):
         super().__init__(theMesh)
         self.solveLinear()
     def setEquations(self, el):
-        opSize = len(self.mesh.GM[el]) / self.mesh.number_of_variables
+        opSize = len(self.mesh.gm[el]) / self.mesh.number_of_variables
         opL = {}; opG = {}
 
         opL['f.f'] = self.mesh.Dx[el].dot(self.mesh.Dx[el])
@@ -280,7 +280,7 @@ class LSProblemChildTestNelNv(LSProblem):
         super().__init__(theMesh)
         self.solveLinear()
     def setEquations(self, el):
-        opSize = len(self.mesh.GM[el]) / self.mesh.number_of_variables
+        opSize = len(self.mesh.gm[el]) / self.mesh.number_of_variables
         opL = {}; opG = {}
 
         opL['f.f'] = self.mesh.Dx[el]
@@ -306,11 +306,11 @@ class NonLinearProblemTest(LSProblem):
         super().__init__(theMesh)
         self.solveNonLinear()
     def setEquations(self, el):
-        opSize = len(self.mesh.GM[el]) / self.mesh.number_of_variables
+        opSize = len(self.mesh.gm[el]) / self.mesh.number_of_variables
         opL = {}; opG = {}
-        x = self.mesh.x[self.mesh.GM[el]]
+        x = self.mesh.x[self.mesh.gm[el]]
 
-        opL['f.f'] = numpy.diag(self.f[self.mesh.GM[el]]).dot(self.mesh.Dx[el])
+        opL['f.f'] = numpy.diag(self.f[self.mesh.gm[el]]).dot(self.mesh.Dx[el])
 
         opG['f'] = 2*x**3 - 6*x**2 + 2*x + 2
 
@@ -328,12 +328,12 @@ class TorsionalProblemTest(LSProblem):
         self.solveLinearSlab()
     def setEquations(self, el):
         opL = {}; opG = {}
-        opSize = len(self.mesh.GM[el]) / self.mesh.number_of_variables
-        x = self.mesh.x[self.mesh.GM[el]]
+        opSize = len(self.mesh.gm[el]) / self.mesh.number_of_variables
+        x = self.mesh.x[self.mesh.gm[el]]
         Id = numpy.identity(opSize)
         Zero = numpy.zeros(opSize)
         Dx = self.mesh.Dx[el]
-        # f = numpy.diag(self.f[self.mesh.GM[el]]) # <--only for non-linear problems
+        # f = numpy.diag(self.f[self.mesh.gm[el]]) # <--only for non-linear problems
 
         m=1.0; c=0.2; k=1.0
 
@@ -358,12 +358,12 @@ class TorsionalProblemTestNv(LSProblem):
     """Class for testing a torsional problem in N variables on N elements."""
     def setEquations(self, el):
         opL = {}; opG = {}
-        opSize = len(self.mesh.GM[el]) / self.mesh.number_of_variables
-        x = self.mesh.x[self.mesh.GM[el][:opSize]]
+        opSize = len(self.mesh.gm[el]) / self.mesh.number_of_variables
+        x = self.mesh.x[self.mesh.gm[el][:opSize]]
         Id = numpy.identity(opSize)
         Zero = numpy.zeros(opSize)
         Dx = self.mesh.Dx[el]
-        # f = numpy.diag(self.f[self.mesh.GM[el]]) # <--only for non-linear problems
+        # f = numpy.diag(self.f[self.mesh.gm[el]]) # <--only for non-linear problems
 
         m=[2.0, 4.0, 3.0, 10.0]
         c_abs=[1.0, 0.0, 0.0, 0.0]
