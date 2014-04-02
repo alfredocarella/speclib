@@ -2,7 +2,8 @@ import os
 import matplotlib.pyplot
 import numpy
 import pylab
-from solverls.speclib import info, lagrange_interpolating_matrix, conj_grad_elem, Iterator, conj_grad
+from solverls.iterator import Iterator
+from solverls.speclib import info, lagrange_interpolating_matrix, conj_grad_elem, conj_grad
 
 __author__ = 'raul'
 
@@ -131,7 +132,7 @@ class LSProblem(object):
     def solveNonLinear(self):
         self.f = self.mesh.x    # or even --> numpy.ones(len(self.mesh.x))
         it = Iterator(min_residual=1e-20, max_nonlinear_it=50, min_delta=1e-16)
-        it.iteratePicard(self, self.setOperators, self.setBoundaryConditions, [0,1])
+        it.iterate(self, self.setOperators, self.setBoundaryConditions, [0,1])
 
         print("Iterations: %r  -  Residual: %04.2e  -  delta = %04.2e" % (it.number_of_iterations, self.residual, it.delta))
 

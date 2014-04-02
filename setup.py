@@ -11,7 +11,7 @@ config = {
     'author_email': 'alfredocarella@gmail.com',
     'version': '0.1',
     'install_requires': ['nose'],
-    'packages': ['solverls'],
+    'packages': ['solverls', 'numpy'],
     'scripts': [],
     'name': 'speclib'
 }

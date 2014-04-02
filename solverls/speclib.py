@@ -1,7 +1,6 @@
 import math    # for math.sqrt() in conjGrad()
 
 import numpy
-import matplotlib.pyplot
 
 
 # ********************************************************** #
@@ -192,12 +191,12 @@ def gauss_lobatto_legendre(np, tol=1e-18):  # TODO: gauss_lobatto_legendre() sho
     # This loop finds the associated weights
     for i in range(np):
         L = legendre_polynomial(np-1,p[i])
-        w[i] = 2.0 / ( (np-1) * np * L ** 2.0 )
+        w[i] = 2.0 / ((np-1) * np * L ** 2.0)
 
     return p, w
 
 
-def gll(np, x_min, x_max):
+def gll(number_of_points, x_min, x_max):
     """
     Returns separate vectors containing the points and weights for the Gauss Lobatto Legendre quadrature rule for the interval [x_min, x_max].
                    
@@ -211,13 +210,15 @@ def gll(np, x_min, x_max):
     Author    : Alfredo R. Carella <alfredocarella@gmail.com>
     """
 
-    p, w = gauss_lobatto_legendre(np)
+    quadrature_points, quadrature_weights = gauss_lobatto_legendre(number_of_points)
     delta = x_max - x_min
-    for i in range(np):
-        p[i] = delta / 2.0 * (p[i]+1.0) + x_min   # mapping from (-1,1) -> (x_min, x_max)
-        w[i] *= delta / 2.0
 
-    return p, w
+    # mapping from (-1,1) -> (x_min, x_max)
+    for i in range(number_of_points):
+        quadrature_points[i] = delta / 2.0 * (quadrature_points[i]+1.0) + x_min
+        quadrature_weights[i] *= delta / 2.0
+
+    return quadrature_points, quadrature_weights
 
 
 def lagrange_derivative_matrix_gll(np):
@@ -230,8 +231,8 @@ def lagrange_derivative_matrix_gll(np):
     Author    : Alfredo R. Carella <alfredocarella@gmail.com>
     """
 
-    derivative_matrix = numpy.zeros((np, np))
-    gll_points, gll_weights = gauss_lobatto_legendre(np)
+    gll_derivative_matrix = numpy.zeros((np, np))
+    points, weights = gauss_lobatto_legendre(np)
 
     for i in range(np):
         for j in range(np):
@@ -239,12 +240,13 @@ def lagrange_derivative_matrix_gll(np):
             if i == j:
                 pass    # D[i,j]=0 for the main diagonal
             else:
-                derivative_matrix[i, j] = legendre_polynomial(np-1, gll_points[i]) / (legendre_polynomial(np-1, gll_points[j]) * (gll_points[i] - gll_points[j]))  # Eq. 4.34 in DeMaerschalck2003
+                # Eq. 4.34 in DeMaerschalck2003
+                gll_derivative_matrix[i, j] = legendre_polynomial(np-1, points[i]) / (legendre_polynomial(np-1, points[j]) * (points[i] - points[j]))
 
-    derivative_matrix[0, 0] = -np * (np-1) / 4.0
-    derivative_matrix[np-1, np-1] = np * (np-1) / 4.0
+    gll_derivative_matrix[0, 0] = -np * (np-1) / 4.0
+    gll_derivative_matrix[np-1, np-1] = np * (np-1) / 4.0
 
-    return derivative_matrix
+    return gll_derivative_matrix
 
 
 def lagrange_interpolating_matrix(x_in, x_out):
@@ -284,8 +286,9 @@ def legendre_derivative(n, x):
     if x == -1 or x == 1:
         lagrange_derivative = x**(n-1.0) * (1.0/2.0) * n * (n+1.0)
     else:
+        # Recurrence 4.5.10 in 'Press1993.pdf'
         for i in range(1,n):
-            lagrange_polynomial[i+1] = (2.0*i+1)/(i+1.0)*x*lagrange_polynomial[i] - i/(i+1.0)*lagrange_polynomial[i-1]  # Recurrence 4.5.10
+            lagrange_polynomial[i+1] = (2.0*i+1)/(i+1.0)*x*lagrange_polynomial[i] - i/(i+1.0)*lagrange_polynomial[i-1]
         lagrange_derivative = n/(1.0-x**2.0)*lagrange_polynomial[n-1] - n*x/(1.0-x**2.0)*lagrange_polynomial[n]
 
     return lagrange_derivative
@@ -302,166 +305,17 @@ def legendre_polynomial(n, x):
     Author    : Alfredo R. Carella <alfredocarella@gmail.com>
     """
 
-    Ln = numpy.zeros((n+1, len(numpy.atleast_1d(x))))
-    Ln[0, :] = 1.0
-    Ln[1, :] = x
+    lagrange_polynomial = numpy.zeros((n+1, len(numpy.atleast_1d(x))))
+    lagrange_polynomial[0, :] = 1.0
+    lagrange_polynomial[1, :] = x
 
+    # Recurrence 4.5.10 in 'Press1993.pdf'
     if n > 1:
         for i in range(1, n):
-            Ln[i+1, :] = ( (2.0 * i+1.0) / (i+1.0) * x) * Ln[i,:] - i / (i+1.0) * Ln[i-1, :]  # Recurrence 4.5.10 in 'Press1993.pdf'
+            lagrange_polynomial[i+1, :] = ((2.0 * i+1.0) / (i+1.0) * x) * lagrange_polynomial[i, :] - i / (i+1.0)*lagrange_polynomial[i-1, :]
     else:
         pass
 
-    return Ln[n, :]
+    return lagrange_polynomial[n, :]
 
 
-class Iterator(object):
-
-    def __init__(self, min_residual=1e-20, max_nonlinear_it=50, min_delta=1e-16):
-        self.min_residual = min_residual
-        self.max_nonlinear_it = max_nonlinear_it
-        self.min_delta = min_delta
-
-        self.delta = 1.0
-        self.number_of_iterations = 0
-        self.converged = False
-        self.not_converging = False
-        self.reached_max_it = False
-
-    def iteratePicard(self, problem, set_operators, set_boundary_conditions, list_of_elements=None):
-        while (not self.converged) and (not self.not_converging) and (not self.reached_max_it):
-
-            set_operators(list_of_elements)
-            set_boundary_conditions()
-            problem.f_old = problem.f.copy()
-
-            if len(problem.mesh.gm[0]) == problem.mesh.dof_nv:
-                problem.f, num_cg_it = conj_grad(problem.Ke[0], problem.Ge[0])
-            else:
-                problem.f, num_cg_it = conj_grad_elem(problem.Ke, problem.Ge, problem.mesh.gm, problem.mesh.dof_nv)
-
-            problem.residual = problem.computeResidual(list_of_elements)
-            self.delta = numpy.linalg.norm(problem.f - problem.f_old) / numpy.linalg.norm(problem.f)
-
-            self.number_of_iterations += 1
-
-            if problem.residual < self.min_residual:
-                # print("Converged: residual below tolerance. Residual < %r" % it.MIN_DELTA)
-                self.converged = True
-            elif self.delta < self.min_delta:
-                print("Equal consecutive nonlinear iterations. Delta = %r" % self.delta)
-                self.not_converging = True
-            elif self.number_of_iterations >= self.max_nonlinear_it:
-                print("Stopping after having reached %r nonlinear iterations." % self.number_of_iterations)
-                self.reached_max_it = True
-            else:
-                pass
-
-
-class Mesh1d(object):
-    """
-    This class represents a 1-dimensional high-order Finite Element mesh. 
-    macroGrid = vector with the position of element boundary nodes
-    P = vector with the order for each element (int)
-    NV = number of variables (int)
-    
-    The attributes of class Mesh1d()are:
-    
-    Mesh1d.macroNodes
-    Mesh1d.elementOrders
-    Mesh1d.numberOfElements
-    Mesh1d.listOfVariables
-    Mesh1d.numberOfVariables
-    Mesh1d.dof1v
-    Mesh1d.dof_nv
-    Mesh1d.gm
-    Mesh1d.gm_1v
-    Mesh1d.quadWeights
-    Mesh1d.quadPoints
-    Mesh1d.Jx
-    Mesh1d.Dx
-    Mesh1d.x
-    Mesh1d.longQuadWeights
-        
-    Example:
-    macroGrid, P, NV = numpy.array((0.0,1.0,2.0,3.0)), numpy.array((3,4,2)), 2
-    myMesh1d = Mesh1d(macroGrid, P, NV)
-    print("myMesh1d.Dx[0] = \n%r" % myMesh1d.Dx[0])
-    print("myMesh1d.x[myMesh1d.gm1v[0]] = %r" % myMesh1d.x[myMesh1d.gm_1v[0]])
-    print("myMesh1d.Dx[0].dot(myMesh1d.quadPoints[0]) = \n%r\" % myMesh1d.Dx[0].dot(myMesh1d.quadPoints[0]))
-    """
-
-    def __init__(self, macro_grid, element_orders, variable_names=['f']):
-        self.macro_nodes = macro_grid
-        self.element_orders = numpy.atleast_1d(element_orders)
-        self.number_of_elements = len(self.element_orders)
-        self.list_of_variables = variable_names
-        self.number_of_variables = len(self.list_of_variables)
-        self.dof_1v = numpy.sum(self.element_orders)+1
-        self.dof_nv = self.dof_1v * self.number_of_variables
-
-        self.gm = []
-        self.gm_1v = []
-        node_counter = 0
-        for el_ in range(self.number_of_elements):
-            elementSize = self.number_of_variables * (self.element_orders[el_]+1)
-            self.gm.append(numpy.zeros(elementSize, dtype=numpy.int))
-            for var_ in range(self.number_of_variables):
-                firstVarPos = var_ * (self.element_orders[el_]+1)
-                lastVarPos = firstVarPos + self.element_orders[el_]
-                firstVarNumber = var_ * self.dof_1v + node_counter
-                lastVarNumber = firstVarNumber + self.element_orders[el_]
-                self.gm[el_][firstVarPos : lastVarPos + 1] = numpy.arange(firstVarNumber, lastVarNumber + 1)
-            node_counter += self.element_orders[el_]
-            self.gm_1v.append( self.gm[el_][0 : self.element_orders[el_]+1] )
-
-        self.quadrature_weights = []
-        self.quadrature_points = []
-        self.Jx = []
-        self.Dx = []
-        self.x = numpy.zeros(self.dof_1v)
-        self.long_quadrature_weights = []
-        self.pos = []
-        for el_ in range(self.number_of_elements):
-            lower_element_boundary = self.macro_nodes[el_]
-            upper_element_boundary = self.macro_nodes[el_+1]
-            self.Jx.append((upper_element_boundary - lower_element_boundary) / 2.0)
-            self.Dx.append(lagrange_derivative_matrix_gll(self.element_orders[el_]+1) / self.Jx[el_])
-            qx, qw = gll(self.element_orders[el_]+1, lower_element_boundary, upper_element_boundary)
-            self.quadrature_points.append(qx)    # x coordinate (quad points)
-            self.quadrature_weights.append(qw)    # quadrature weights
-            long_qw = numpy.tile(qw, self.number_of_variables)
-            self.long_quadrature_weights.append(long_qw)
-            self.pos.append({})
-            for var_ in range(self.number_of_variables):
-                first_node_in_element = var_ * len(self.gm_1v[el_])
-                last_node_in_element = first_node_in_element + len(self.gm_1v[el_])
-                self.pos[el_][self.list_of_variables[var_]] = numpy.arange(first_node_in_element, last_node_in_element)
-            self.x[self.gm_1v[el_]] = qx
-
-        self.x = numpy.tile(self.x, self.number_of_variables)
-
-    def plot_mesh(self):
-        # Plot nodes and line
-        micro_grid = self.x
-        macro_grid = self.macro_nodes
-        matplotlib.pyplot.plot((macro_grid[0], macro_grid[-1]), (0, 0), 'r--', linewidth=2.0)    # Lines
-        matplotlib.pyplot.plot(micro_grid, micro_grid*0, 'ro')    # Nodes (micro)
-        matplotlib.pyplot.plot(macro_grid, macro_grid*0, 'bs', markersize=10)    # Nodes (macro)
-
-        # Plot node and element numbers
-        for node_ in range(self.dof_1v):
-            matplotlib.pyplot.text(self.x[node_], -0.1, str(node_), fontsize=10, color='red')
-        for border_ in range(len(macro_grid)-1):
-            element_center = (macro_grid[border_] + macro_grid[border_+1]) / 2.0
-            matplotlib.pyplot.text(element_center, +0.1, str(border_), fontsize=15, color='blue')
-
-        # Write annotations
-        first_element_center = ( macro_grid[0] + macro_grid[1] ) / 2.0
-        matplotlib.pyplot.annotate('element numbers', xy=(first_element_center, 0.17), xytext=(first_element_center, 0.3), arrowprops=dict(facecolor='black', shrink=0.05))
-        matplotlib.pyplot.annotate('node number', xy=(micro_grid[1], -0.12), xytext=(micro_grid[1], -0.3), arrowprops=dict(facecolor='black', shrink=0.05))
-        matplotlib.pyplot.text((macro_grid[0]+macro_grid[-1])/4.0, -0.9, 'Degrees of freedom per variable: %d\nTotal degrees of freedom: %d\nNumber of elements: %d\nVariables: %d %s' %(self.dof_1v, self.dof_nv, self.number_of_elements, self.number_of_variables, self.list_of_variables))
-        matplotlib.pyplot.title('1-D mesh information')
-        matplotlib.pyplot.xlabel("Independent variable coordinate")
-        matplotlib.pyplot.axis([macro_grid[0], macro_grid[-1], -1, 1])
-        matplotlib.pyplot.show()

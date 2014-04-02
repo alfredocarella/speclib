@@ -3,6 +3,7 @@ from solverls import speclib
 
 import numpy
 from solverls.lsproblem import LSProblem
+from solverls.mesh1d import Mesh1d
 
 
 def test_math():    # Testing some of the mathematical routines
@@ -35,8 +36,8 @@ def test_math():    # Testing some of the mathematical routines
     assert_almost_equal(numpy.sum(w), (delta))
     
     # speclib.lagrangeDerivativeMatrixGLL(np) tested here    
-    Dx = speclib.lagrange_derivative_matrix_gll(np) * 2.0/delta
-    Dp = Dx.dot(p)
+    dx = speclib.lagrange_derivative_matrix_gll(np) * 2.0/delta
+    Dp = dx.dot(p)
     numpy.testing.assert_allclose(Dp, numpy.ones(np))
 
     # speclib.lagrangeInterpolantMatrix(x_in, x_out) tested here    
@@ -50,7 +51,7 @@ def test_math():    # Testing some of the mathematical routines
 
 def test_mesh1d():    # Testing the mesh generation (plotting is not tested here)
     macroGrid, P, varList = numpy.array((0.0,1.0,2.0,3.0)), numpy.array((3,4,2)), ['T', 'pres', 'quality']    
-    myMesh1d = speclib.Mesh1d(macroGrid, P, varList)
+    myMesh1d = Mesh1d(macroGrid, P, varList)
     
     numpy.testing.assert_array_equal(myMesh1d.element_orders, P)
     numpy.testing.assert_allclose(myMesh1d.macro_nodes, macroGrid)
@@ -65,10 +66,10 @@ def test_mesh1d():    # Testing the mesh generation (plotting is not tested here
     integralTestValue = 0
     for el in range(myMesh1d.number_of_elements):
         integralTestValue += myMesh1d.quadrature_points[el].dot(myMesh1d.quadrature_weights[el])
-        assert_almost_equal(myMesh1d.Jx[el], (myMesh1d.x[myMesh1d.gm_1v[el][-1]]-myMesh1d.x[myMesh1d.gm_1v[el][0]])/2.0 )
+        assert_almost_equal(myMesh1d.jac[el], (myMesh1d.x[myMesh1d.gm_1v[el][-1]]-myMesh1d.x[myMesh1d.gm_1v[el][0]])/2.0 )
         numpy.testing.assert_array_equal(myMesh1d.gm[el][:myMesh1d.element_orders[el]+1], myMesh1d.gm_1v[el])
         numpy.testing.assert_array_equal(myMesh1d.quadrature_points[el], myMesh1d.x[myMesh1d.gm_1v[el]])
-        numpy.testing.assert_array_equal(myMesh1d.Dx[el], speclib.lagrange_derivative_matrix_gll(myMesh1d.element_orders[el]+1)/myMesh1d.Jx[el])
+        numpy.testing.assert_array_equal(myMesh1d.dx[el], speclib.lagrange_derivative_matrix_gll(myMesh1d.element_orders[el]+1)/myMesh1d.jac[el])
         numpy.testing.assert_array_equal(myMesh1d.long_quadrature_weights[el], numpy.tile(myMesh1d.quadrature_weights[el], myMesh1d.number_of_variables))
         posVarTestValue = []
         for var in myMesh1d.list_of_variables:
@@ -79,7 +80,7 @@ def test_mesh1d():    # Testing the mesh generation (plotting is not tested here
     
 def testingProblem1el1v():    # Testing results for a simple problem (1 var, 1 elem)
     macroGrid, P, varList = numpy.array((0.0,2.0)), numpy.array((4)), ['f']
-    myMesh1d = speclib.Mesh1d(macroGrid, P, varList)
+    myMesh1d = Mesh1d(macroGrid, P, varList)
 
     myProblem = LSProblemChildTest1el1v(myMesh1d)
 
@@ -114,7 +115,7 @@ def testingProblem1el1v():    # Testing results for a simple problem (1 var, 1 e
 def testingProblemNelNv():    # Testing a problem w/ multiple variables and elements
     macroGrid, P, varList = numpy.array((0.0, 1.0, 2.0)), numpy.array((3, 3)), ['f', 'g']
     print("macroGrid = %r - P = %r - varList = %r" % (macroGrid, P, varList))
-    myMesh1d = speclib.Mesh1d(macroGrid, P, varList)
+    myMesh1d = Mesh1d(macroGrid, P, varList)
     print("myMesh1d = Mesh1d(macroGrid, P, varList)")
 
     myProblem = LSProblemChildTestNelNv(myMesh1d)
@@ -123,7 +124,7 @@ def testingProblemNelNv():    # Testing a problem w/ multiple variables and elem
 
     # print("myProblem.opL = %r" % myProblem.opL)
     # print("myProblem.opG = %r" % myProblem.opG)
-    # print("myProblem.mesh.Dx = %r" % myProblem.mesh.Dx)
+    # print("myProblem.mesh.dx = %r" % myProblem.mesh.dx)
     # print("myProblem.mesh.gm = %r" % myProblem.mesh.gm)
 
     # print('\nThe "elemGM" solution vector is %r\n' % (myProblem.f))
@@ -152,7 +153,7 @@ def testingProblemNonLinear():    # Testing iterative routine for solving a non-
     macroGrid, P, varList = numpy.array((0.0, 1.0, 2.0)), numpy.array((3, 3)), ['f']
     print("macroGrid = %r - P = %r - varList = %r" % (macroGrid, P, varList))
 
-    myMesh1d = speclib.Mesh1d(macroGrid, P, varList)
+    myMesh1d = Mesh1d(macroGrid, P, varList)
     myProblem = NonLinearProblemTest(myMesh1d)
     myProblem.plotSolution(['f'], 'testingProblemNonLinear.pdf')
 
@@ -183,7 +184,7 @@ def testingProblemTorsional1v():    # Testing a torsional vibration problem (1 m
     varList = ['v0', 'x0']
     # print("macroGrid = %r - P = %r - varList = %r" % (macroGrid, P, varList))
 
-    myMesh1d = speclib.Mesh1d(macroGrid, P, varList)
+    myMesh1d = Mesh1d(macroGrid, P, varList)
     myProblem = TorsionalProblemTest(myMesh1d)
     myProblem.plotSolution()#filename='testingProblemTorsional1v.pdf')
 
@@ -221,7 +222,7 @@ def testingProblemTorsionalNv():    # Testing a torsional vibration problem (N m
         varList.append('x%d' % varNum)
     print(varList)
 
-    myMesh1d = speclib.Mesh1d(macroGrid, P, varList)
+    myMesh1d = Mesh1d(macroGrid, P, varList)
     myProblem = TorsionalProblemTestNv(myMesh1d)
     myProblem.solveLinearSlab()
     myProblem.plotSolution()#filename='testingProblemTorsionalNv.pdf')
@@ -261,7 +262,7 @@ class LSProblemChildTest1el1v(LSProblem):
         opSize = len(self.mesh.gm[el]) / self.mesh.number_of_variables
         opL = {}; opG = {}
 
-        opL['f.f'] = self.mesh.Dx[el].dot(self.mesh.Dx[el])
+        opL['f.f'] = self.mesh.dx[el].dot(self.mesh.dx[el])
 
         opG['f'] = -1.0 * numpy.ones(opSize)
 
@@ -283,10 +284,10 @@ class LSProblemChildTestNelNv(LSProblem):
         opSize = len(self.mesh.gm[el]) / self.mesh.number_of_variables
         opL = {}; opG = {}
 
-        opL['f.f'] = self.mesh.Dx[el]
+        opL['f.f'] = self.mesh.dx[el]
         opL['f.g'] = -1.0 * numpy.identity(opSize)
         opL['g.f'] = numpy.zeros((opSize, opSize))
-        opL['g.g'] = self.mesh.Dx[el]
+        opL['g.g'] = self.mesh.dx[el]
 
         opG['f'] = numpy.zeros(opSize)
         opG['g'] = -1.0 * numpy.ones(opSize)
@@ -310,7 +311,7 @@ class NonLinearProblemTest(LSProblem):
         opL = {}; opG = {}
         x = self.mesh.x[self.mesh.gm[el]]
 
-        opL['f.f'] = numpy.diag(self.f[self.mesh.gm[el]]).dot(self.mesh.Dx[el])
+        opL['f.f'] = numpy.diag(self.f[self.mesh.gm[el]]).dot(self.mesh.dx[el])
 
         opG['f'] = 2*x**3 - 6*x**2 + 2*x + 2
 
@@ -332,15 +333,15 @@ class TorsionalProblemTest(LSProblem):
         x = self.mesh.x[self.mesh.gm[el]]
         Id = numpy.identity(opSize)
         Zero = numpy.zeros(opSize)
-        Dx = self.mesh.Dx[el]
+        dx = self.mesh.dx[el]
         # f = numpy.diag(self.f[self.mesh.gm[el]]) # <--only for non-linear problems
 
         m=1.0; c=0.2; k=1.0
 
-        opL['v0.v0'] = m*Dx + c*Id
+        opL['v0.v0'] = m*dx + c*Id
         opL['v0.x0'] = k*Id
         opL['x0.v0'] = Id
-        opL['x0.x0'] = -Dx
+        opL['x0.x0'] = -dx
 
         opG['v0'] = Zero    #F
         opG['x0'] = Zero    #
@@ -362,7 +363,7 @@ class TorsionalProblemTestNv(LSProblem):
         x = self.mesh.x[self.mesh.gm[el][:opSize]]
         Id = numpy.identity(opSize)
         Zero = numpy.zeros(opSize)
-        Dx = self.mesh.Dx[el]
+        dx = self.mesh.dx[el]
         # f = numpy.diag(self.f[self.mesh.gm[el]]) # <--only for non-linear problems
 
         m=[2.0, 4.0, 3.0, 10.0]
@@ -375,13 +376,13 @@ class TorsionalProblemTestNv(LSProblem):
         vi='v0'; vip1='v1'
         xi='x0'; xip1='x1'
 
-        opL[vi +'.'+ vi] = m[i]*Dx + (c[i]+c_abs[i])*Id
+        opL[vi +'.'+ vi] = m[i]*dx + (c[i]+c_abs[i])*Id
         opL[vi +'.'+ xi] = k[i]*Id
         opL[vi +'.'+ vip1] = -1.0*c[i]*Id
         opL[vi +'.'+ xip1] = -1.0*k[i]*Id
 
         opL[xi +'.'+ vi] = -1.0*Id
-        opL[xi +'.'+ xi] = Dx
+        opL[xi +'.'+ xi] = dx
 
         opG[vi] = numpy.sin(x/10.0)    #F_1
 
@@ -393,13 +394,13 @@ class TorsionalProblemTestNv(LSProblem):
 
             opL[vi +'.'+ vim1] = -1.0*c[i-1]*Id
             opL[vi +'.'+ xim1] = -1.0*k[i-1]*Id
-            opL[vi +'.'+ vi] = m[i]*Dx + (c[i-1]+c[i]+c_abs[i])*Id
+            opL[vi +'.'+ vi] = m[i]*dx + (c[i-1]+c[i]+c_abs[i])*Id
             opL[vi +'.'+ xi] = (k[i-1]+k[i])*Id
             opL[vi +'.'+ vip1] = -1.0*c[i]*Id
             opL[vi +'.'+ xip1] = -1.0*k[i]*Id
 
             opL[xi +'.'+ vi] = -1.0*Id
-            opL[xi +'.'+ xi] = Dx
+            opL[xi +'.'+ xi] = dx
 
 
         vim1='v'+str(n-1); vi='v'+str(n)
@@ -407,10 +408,10 @@ class TorsionalProblemTestNv(LSProblem):
 
         opL[vi +'.'+ vim1] = -1.0*c[n-1]*Id
         opL[vi +'.'+ xim1] = -1.0*k[n-1]*Id
-        opL[vi +'.'+ vi] = m[n]*Dx + (c[n-1]+c_abs[n])*Id
+        opL[vi +'.'+ vi] = m[n]*dx + (c[n-1]+c_abs[n])*Id
         opL[vi +'.'+ xi] = k[n-1]*Id
         opL[xi +'.'+ vi] = -1.0*Id
-        opL[xi +'.'+ xi] = Dx
+        opL[xi +'.'+ xi] = dx
 
         opG[vi] = Zero    #F_n
 
