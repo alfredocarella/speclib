@@ -7,10 +7,14 @@ import numpy
 # ********************** LIBRARY CODE ********************** #
 # ********************************************************** #
 
-def conj_grad_elem(k_elem, Ge, gm, dof, x=None, TOL=1.0e-12):
+def conj_grad_elem(k_elem, g_elem, gm, dof, x=None, tol=1.0e-12):
     """
-    Attempts to solve the system of linear equations A*x=b for x. The dof-by-dof coefficient matrix A must be symmetric and positive definite (SPD), and should also be large and sparse. 
-    The matrix A is only filled across squared blocks on its main diagonal, as results from a finite-element problem. The list Ke contains the non-empty blocks on matrix A, whose lengths need to match the lengths of the vectors in Ge. The list in gm is the gathering matrix specifying the position of Ke blocks in the matrix A and Ge blocks in vector b.
+    Attempts to solve the system of linear equations A*x=b for x. The dof-by-dof coefficient matrix A must be
+    symmetric and positive definite (SPD), and should also be large and sparse.
+    The matrix A is only filled across squared blocks on its main diagonal, as results from a finite-element problem.
+    The list Ke contains the non-empty blocks on matrix A, whose lengths need to match the lengths of the vectors in
+    Ge. The list in gm is the gathering matrix specifying the position of Ke blocks in the matrix A and Ge blocks in
+    vector b.
                    
     Syntax: x = conjGradElem(Ke, Ge, gm, dof, x=None, TOL=1.0e-9)
     <list>    Ke = list of dof-by-dof <numpy.ndarray> matrices (must be SPD)
@@ -32,12 +36,12 @@ def conj_grad_elem(k_elem, Ge, gm, dof, x=None, TOL=1.0e-12):
     for el_ in range(number_of_elements):
         mat_vec_local_product = k_elem[el_].dot(x[gm[el_]])
         local_index = numpy.arange(len(gm[el_]))
-        r[gm[el_]] += Ge[el_][local_index] - mat_vec_local_product[local_index]
+        r[gm[el_]] += g_elem[el_][local_index] - mat_vec_local_product[local_index]
 
     s = r.copy()
-    for i in range(dof):
+    cg_iteration = 0
 
-        # u = loc2gblMatrixVector(Ke, gbl2loc(s, gm), gm, dof)
+    for cg_iteration in range(dof):
         u = numpy.zeros(dof)
         for el_ in range(number_of_elements):
             r_elem = k_elem[el_].dot(s[gm[el_]])
@@ -47,24 +51,25 @@ def conj_grad_elem(k_elem, Ge, gm, dof, x=None, TOL=1.0e-12):
         alpha = s.dot(r) / s.dot(u)
         x = x + alpha * s
 
-        # r = loc2gbl(Ge, gm, dof) - loc2gblMatrixVector(Ke, gbl2loc(x, gm), gm, dof)
         r = numpy.zeros(dof)
         for el_ in range(number_of_elements):
             mat_vec_local_product = k_elem[el_].dot(x[gm[el_]])
             local_index = numpy.arange(len(gm[el_]))
-            r[gm[el_]] += Ge[el_][local_index] - mat_vec_local_product[local_index]
+            r[gm[el_]] += g_elem[el_][local_index] - mat_vec_local_product[local_index]
 
-        if math.sqrt(r.dot(r)) < TOL:
+        if math.sqrt(r.dot(r)) < tol:
             break
         else:
             beta = -r.dot(u) / s.dot(u)
             s = r + beta * s
-    return x, i
+
+    return x, cg_iteration
 
 
 def conj_grad(a, b, x=None, tol=1.0e-12):
     """
-    Attempts to solve the system of linear equations A*x=b for x. The n-by-n coefficient matrix A must be symmetric and positive definite, and should also be large and sparse. The column vector b must have n-length.
+    Attempts to solve the system of linear equations A*x=b for x. The n-by-n coefficient matrix A must be symmetric and
+    positive definite, and should also be large and sparse. The column vector b must have n-length.
                    
     Syntax: x = conjGrad(a, b, x=None, TOL=1.0e-9)
     <numpy.ndarray>    a = n-by-n matrix (must be SPD)
@@ -78,19 +83,22 @@ def conj_grad(a, b, x=None, tol=1.0e-12):
         x = numpy.zeros(len(b))
 
     n = len(b)
-    r = b - a.dot(x)    # Vector product Av(x)
+    r = b - a.dot(x)
     s = r.copy()
-    for i in range(n):
-        u = a.dot(s)    # Vector product Av(s)
-        alpha = s.dot(r) / s.dot(u)    # Original: np.dot(s,r)/np.dot(s,u)
+    cg_iteration = 0
+    for cg_iteration in range(n):
+        u = a.dot(s)
+        alpha = s.dot(r) / s.dot(u)
         x = x + alpha * s
-        r = b - a.dot(x)    # Vector product Av(x)
-        if math.sqrt(r.dot(r)) < tol:    # Original: if (math.sqrt(np.dot(r,r))) < TOL:
+        r = b - a.dot(x)
+
+        if math.sqrt(r.dot(r)) < tol:
             break
         else:
-            beta = -r.dot(u) / s.dot(u)    # Original: beta = -np.dot(r,u)/np.dot(s,u)
+            beta = -r.dot(u) / s.dot(u)
             s = r + beta * s
-    return x, i
+
+    return x, cg_iteration
 
 
 def info(msg):
@@ -110,7 +118,8 @@ def info(msg):
 
 def gauss_legendre(np):
     """
-    Returns separate vectors containing the points and weights for the Gauss Legendre quadrature rule for the interval [-1, 1].
+    Returns separate vectors containing the points and weights for the Gauss Legendre quadrature rule for the interval
+    [-1, 1].
                    
     Syntax: p, w = gauss_lobatto_legendre(np)
     <int>    np = number of points
@@ -121,7 +130,7 @@ def gauss_legendre(np):
     """
 
     # This part finds the A-matrix
-    a = numpy.zeros((np,np))
+    a = numpy.zeros((np, np))
     a[0, 1] = 1.0
 
     if np > 2:
@@ -133,22 +142,21 @@ def gauss_legendre(np):
 
     a[np-1, np-2] = (np-1.0)/(2.0*np-1.0)
 
-    # The array of the sorted eigenvalues/zeros FIXME (probably inefficient)
-    eigenvalues = numpy.linalg.eigvals(a)
-    idx = eigenvalues.argsort()
-    p = eigenvalues[idx]
+    # The array of the sorted eigenvalues/zeros
+    p = numpy.sort(numpy.linalg.eigvals(a))
 
     # This loop finds the associated weights
     w = numpy.zeros(np)
     for j in range(0,np):
-        w[j] = 2.0/((1-p[j]**2.0)*(legendre_derivative(np,p[j]))**2.0)
+        w[j] = 2.0/((1-p[j]**2.0)*(legendre_derivative(np, p[j]))**2.0)
     return p, w
 
 
 def gauss_lobatto_legendre(np, tol=1e-18):  # TODO: gauss_lobatto_legendre() should be inside gll(), as a particular case
 
     """
-    Returns separate vectors containing the points and weights for the Gauss Lobatto Legendre quadrature rule for the interval [-1, 1].
+    Returns separate vectors containing the points and weights for the Gauss Lobatto Legendre quadrature rule for the
+    interval [-1, 1].
                    
     Syntax: p, w = gauss_lobatto_legendre(np)
     <int>    np = number of points
@@ -158,7 +166,7 @@ def gauss_lobatto_legendre(np, tol=1e-18):  # TODO: gauss_lobatto_legendre() sho
     Author    : Alfredo R. Carella <alfredocarella@gmail.com>
     """
 
-    tol = 1e-14    # TOL = Tolerance in the Newton-iteration
+    tol = 1e-14    # TOL = Tolerance in the Newton iteration
     p = numpy.zeros(np)
     p[0] = -1.0
     p[-1] = 1.0
@@ -198,7 +206,8 @@ def gauss_lobatto_legendre(np, tol=1e-18):  # TODO: gauss_lobatto_legendre() sho
 
 def gll(number_of_points, x_min, x_max):
     """
-    Returns separate vectors containing the points and weights for the Gauss Lobatto Legendre quadrature rule for the interval [x_min, x_max].
+    Returns separate vectors containing the points and weights for the Gauss Lobatto Legendre quadrature rule for the
+    interval [x_min, x_max].
                    
     Syntax: p, w = gll(np, x_min, x_max)
     <int>    np = number of points
@@ -223,7 +232,9 @@ def gll(number_of_points, x_min, x_max):
 
 def lagrange_derivative_matrix_gll(np):
     """
-    Returns a matrix containing the values of the derivatives of the Lagrange polynomials l'_j evaluated at the GLL quadrature points x_i of order np-1, where [-1 <= x_i <= 1]. The obtained matrix (numpy.ndarray) is defined as: D_{ij} = l'_j(x_i) for i,j = 0:np-1
+    Returns a matrix containing the values of the derivatives of the Lagrange polynomials l'_j evaluated at the GLL
+    quadrature points x_i of order np-1, where [-1 <= x_i <= 1]. The obtained matrix (numpy.ndarray) is defined as:
+    D_{ij} = l'_j(x_i) for i,j = 0:np-1
                    
     Syntax: D = lagrange_derivative_matrix_gll(np, x)
     <int>    np = number of points
@@ -251,7 +262,8 @@ def lagrange_derivative_matrix_gll(np):
 
 def lagrange_interpolating_matrix(x_in, x_out):
     """
-    Returns a matrix 'L' that yields 'f(x_out)=L*f(x_in)', where x_in are the gauss-lobatto-legendre interpolating nodes of order n+1 and x_out is an arbitrary set of points.
+    Returns a matrix 'L' that yields 'f(x_out)=L*f(x_in)', where x_in are the gauss-lobatto-legendre interpolating
+    nodes of order n+1 and x_out is an arbitrary set of points.
     """
 
     input_length = len(x_in)
@@ -270,7 +282,8 @@ def lagrange_interpolating_matrix(x_in, x_out):
 
 def legendre_derivative(n, x):
     """
-    Returns the the value of the derivative of the n'th Legendre polynomial evaluated at the coordinate x. The input 'x' can be a vector of points.
+    Returns the the value of the derivative of the n'th Legendre polynomial evaluated at the coordinate x. The input
+    'x' can be a vector of points.
 
     Syntax: Ld = legendre_derivative(n,x)
     <int>    n = polynomial order 0,1,...
@@ -296,7 +309,8 @@ def legendre_derivative(n, x):
 
 def legendre_polynomial(n, x):
     """
-    Returns the value of the n'th Legendre polynomial evaluated at the coordinate 'x'. The input 'x' can be a vector of points.
+    Returns the value of the n'th Legendre polynomial evaluated at the coordinate 'x'. The input 'x' can be a vector
+    of points.
 
     Syntax: L = legendre_polynomial(n,x)
     <int>    n = polynomial order 0,1,...
@@ -305,17 +319,17 @@ def legendre_polynomial(n, x):
     Author    : Alfredo R. Carella <alfredocarella@gmail.com>
     """
 
-    lagrange_polynomial = numpy.zeros((n+1, len(numpy.atleast_1d(x))))
-    lagrange_polynomial[0, :] = 1.0
-    lagrange_polynomial[1, :] = x
+    lagrange_poly = numpy.zeros((n+1, len(numpy.atleast_1d(x))))
+    lagrange_poly[0, :] = 1.0
+    lagrange_poly[1, :] = x
 
     # Recurrence 4.5.10 in 'Press1993.pdf'
     if n > 1:
         for i in range(1, n):
-            lagrange_polynomial[i+1, :] = ((2.0 * i+1.0) / (i+1.0) * x) * lagrange_polynomial[i, :] - i / (i+1.0)*lagrange_polynomial[i-1, :]
+            lagrange_poly[i+1, :] = ((2.0*i+1.0) / (i+1.0)*x) * lagrange_poly[i, :] - i / (i+1.0)*lagrange_poly[i-1, :]
     else:
         pass
 
-    return lagrange_polynomial[n, :]
+    return lagrange_poly[n, :]
 
 

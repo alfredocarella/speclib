@@ -11,9 +11,9 @@ config = {
     'author_email': 'alfredocarella@gmail.com',
     'version': '0.1',
     'install_requires': ['nose'],
-    'packages': ['solverls', 'numpy'],
+    'packages': ['solverls'],
     'scripts': [],
     'name': 'speclib'
 }
 
-setup(**config)
+setup(requires=['numpy', 'nose', 'matplotlib'], **config)
