@@ -147,67 +147,15 @@ def gauss_legendre(np):
 
     # This loop finds the associated weights
     w = numpy.zeros(np)
-    for j in range(0,np):
+    for j in range(0, np):
         w[j] = 2.0/((1-p[j]**2.0)*(legendre_derivative(np, p[j]))**2.0)
     return p, w
 
 
-def gauss_lobatto_legendre(np, tol=1e-18):  # TODO: gauss_lobatto_legendre() should be inside gll(), as a particular case
-
+def gll(number_of_points, x_min=-1.0, x_max=1.0, tol=1e-14):
     """
-    Returns separate vectors containing the points and weights for the Gauss Lobatto Legendre quadrature rule for the
-    interval [-1, 1].
-                   
-    Syntax: p, w = gauss_lobatto_legendre(np)
-    <int>    np = number of points
-    <float>    p = quadrature points
-    <float>    w = quadrature weight
-    
-    Author    : Alfredo R. Carella <alfredocarella@gmail.com>
-    """
-
-    tol = 1e-14    # TOL = Tolerance in the Newton iteration
-    p = numpy.zeros(np)
-    p[0] = -1.0
-    p[-1] = 1.0
-
-    w = numpy.zeros(np)
-
-    if np < 3:
-        for i in range(np):
-            L = legendre_polynomial(np-1, p[i])
-            w[i] = 2.0 / ( (np-1) * np * L ** 2.0 )
-        return p, w
-    else:
-        pass
-
-    # These points are needed as start (seed) values for the Newton iteration
-    gl_points, gl_weights = gauss_legendre(np-1)
-    start_values = numpy.zeros(np)
-    start_values[1:np-1] = (gl_points[0:np-2] + gl_points[1:np-1]) / 2.0
-
-    # This loop executes the Newton-iteration to find the GLL-points
-    for i in range(1, np-1):
-        p[i] = start_values[i]
-        p_old = 0.0
-        while abs(p[i] - p_old) > tol:
-            p_old = p[i]
-            L = legendre_polynomial(np-1, p_old)
-            Ld = legendre_derivative(np-1, p_old)
-            p[i] = p_old + ((1.0 - p_old ** 2.0) * Ld) / ((np-1.0) * np * L)
-
-    # This loop finds the associated weights
-    for i in range(np):
-        L = legendre_polynomial(np-1,p[i])
-        w[i] = 2.0 / ((np-1) * np * L ** 2.0)
-
-    return p, w
-
-
-def gll(number_of_points, x_min, x_max):
-    """
-    Returns separate vectors containing the points and weights for the Gauss Lobatto Legendre quadrature rule for the
-    interval [x_min, x_max].
+    Returns two separate vectors containing the points and weights for the Gauss Lobatto Legendre quadrature rule for
+    the interval [x_min, x_max].
                    
     Syntax: p, w = gll(np, x_min, x_max)
     <int>    np = number of points
@@ -219,15 +167,45 @@ def gll(number_of_points, x_min, x_max):
     Author    : Alfredo R. Carella <alfredocarella@gmail.com>
     """
 
-    quadrature_points, quadrature_weights = gauss_lobatto_legendre(number_of_points)
-    delta = x_max - x_min
+    max_order = number_of_points-1
+    quad_points = numpy.zeros(number_of_points)
+    quad_points[0], quad_points[-1] = -1.0, 1.0
 
-    # mapping from (-1,1) -> (x_min, x_max)
-    for i in range(number_of_points):
-        quadrature_points[i] = delta / 2.0 * (quadrature_points[i]+1.0) + x_min
-        quadrature_weights[i] *= delta / 2.0
+    quad_weights = numpy.zeros(number_of_points)
 
-    return quadrature_points, quadrature_weights
+    if number_of_points < 3:
+        for i in range(number_of_points):
+            L = legendre_polynomial(max_order, quad_points[i])
+            quad_weights[i] = 2.0 / (max_order * number_of_points * L ** 2.0)
+        return quad_points, quad_weights
+    else:
+        # These points are needed as start (seed) values for the Newton iteration
+        gl_points, gl_weights = gauss_legendre(max_order)
+        start_values = numpy.zeros(number_of_points)
+        start_values[1:max_order] = (gl_points[0:max_order-1] + gl_points[1:max_order]) / 2.0
+
+        # This loop executes the Newton-iteration to find the GLL points
+        for i in range(1, max_order):
+            quad_points[i] = start_values[i]
+            p_old = 0.0
+            while abs(quad_points[i] - p_old) > tol:
+                p_old = quad_points[i]
+                L = legendre_polynomial(max_order, p_old)
+                Ld = legendre_derivative(max_order, p_old)
+                quad_points[i] = p_old + ((1.0 - p_old ** 2.0) * Ld) / (max_order * number_of_points * L)
+
+        # This loop finds the associated weights
+        for i in range(number_of_points):
+            L = legendre_polynomial(max_order, quad_points[i])
+            quad_weights[i] = 2.0 / (max_order * number_of_points * L ** 2.0)
+
+    # Mapping [-1,1] -> [x_min, x_max]
+    if (x_min is not None) and (x_max is not None):
+        delta = x_max - x_min
+        quad_points = delta / 2.0 * (quad_points + 1.0) + x_min
+        quad_weights *= delta / 2.0
+
+    return quad_points, quad_weights
 
 
 def lagrange_derivative_matrix_gll(np):
@@ -243,7 +221,7 @@ def lagrange_derivative_matrix_gll(np):
     """
 
     gll_derivative_matrix = numpy.zeros((np, np))
-    points, weights = gauss_lobatto_legendre(np)
+    points, weights = gll(np)
 
     for i in range(np):
         for j in range(np):
