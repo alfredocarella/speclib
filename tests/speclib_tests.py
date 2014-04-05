@@ -84,14 +84,14 @@ def testingProblem1el1v():    # Testing results for a simple problem (1 var, 1 e
 
     myProblem = LSProblemChildTest1el1v(myMesh1d)
 
-    myProblem.residual = myProblem.computeResidual()
+    myProblem.residual = myProblem.compute_residual()
     assert_almost_equal(myProblem.residual, 0)
     # numpy.testing.assert_allclose(myProblem.Ke, myProblem.opL[0].T.dot(numpy.diag(myProblem.mesh.longQuadWeights[0])).dot(myProblem.opL[0])) #<--Missing BCs
 
-    print("myProblem.opL = %r" % myProblem.opL)
-    print("myProblem.opG = %r" % myProblem.opG)
-    print("myProblem.Ke = %r" % myProblem.Ke)
-    print("myProblem.Ge = %r" % myProblem.Ge)
+    print("myProblem.opL = %r" % myProblem.op_l)
+    print("myProblem.opG = %r" % myProblem.op_g)
+    print("myProblem.Ke = %r" % myProblem.k_el)
+    print("myProblem.Ge = %r" % myProblem.g_el)
 
     print("The residual for this problem is %04.2e" % myProblem.residual)
     print('\nThe solution vector is %r\n' % (myProblem.f))
@@ -119,8 +119,8 @@ def testingProblemNelNv():    # Testing a problem w/ multiple variables and elem
     print("myMesh1d = Mesh1d(macroGrid, P, varList)")
 
     myProblem = LSProblemChildTestNelNv(myMesh1d)
-    myProblem.residual = myProblem.computeResidual()
-    myProblem.plotSolution(['f','g'], 'testingProblemNelNv.pdf')
+    myProblem.residual = myProblem.compute_residual()
+    myProblem.plot_solution(['f','g'], 'testingProblemNelNv.pdf')
 
     # print("myProblem.opL = %r" % myProblem.opL)
     # print("myProblem.opG = %r" % myProblem.opG)
@@ -155,7 +155,7 @@ def testingProblemNonLinear():    # Testing iterative routine for solving a non-
 
     myMesh1d = Mesh1d(macroGrid, P, varList)
     myProblem = NonLinearProblemTest(myMesh1d)
-    myProblem.plotSolution(['f'], 'testingProblemNonLinear.pdf')
+    myProblem.plot_solution(['f'], 'testingProblemNonLinear.pdf')
 
     print("The residual for this problem is %04.2e" % myProblem.residual)
 
@@ -186,7 +186,7 @@ def testingProblemTorsional1v():    # Testing a torsional vibration problem (1 m
 
     myMesh1d = Mesh1d(macroGrid, P, varList)
     myProblem = TorsionalProblemTest(myMesh1d)
-    myProblem.plotSolution()#filename='testingProblemTorsional1v.pdf')
+    myProblem.plot_solution()#filename='testingProblemTorsional1v.pdf')
 
     speclib.info("'TorsionalProblemTest.computeResidual()' does not work.")
     # # The following line will not work because myProblem.opL and and myProblem.opG have been reduced to 1 element. The full info is not saved
@@ -224,8 +224,8 @@ def testingProblemTorsionalNv():    # Testing a torsional vibration problem (N m
 
     myMesh1d = Mesh1d(macroGrid, P, varList)
     myProblem = TorsionalProblemTestNv(myMesh1d)
-    myProblem.solveLinearSlab()
-    myProblem.plotSolution()#filename='testingProblemTorsionalNv.pdf')
+    myProblem.solve_linear_slab()
+    myProblem.plot_solution()#filename='testingProblemTorsionalNv.pdf')
 
     speclib.info("'TorsionalProblemTestNv.computeResidual()' does not work.")
     # # The following line will not work because myProblem.opL and and myProblem.opG have been reduced to 1 element. The full info is not saved
@@ -255,10 +255,10 @@ def testingProblemTorsionalNv():    # Testing a torsional vibration problem (N m
 
 class LSProblemChildTest1el1v(LSProblem):
     """Class for testing a simple problem in 1 variable on 1 element."""
-    def __init__(self, theMesh):
-        super().__init__(theMesh)
-        self.solveLinear()
-    def setEquations(self, el):
+    def __init__(self, mesh):
+        super().__init__(mesh)
+        self.solve_linear()
+    def set_equations(self, el):
         opSize = len(self.mesh.gm[el]) / self.mesh.number_of_variables
         opL = {}; opG = {}
 
@@ -267,20 +267,20 @@ class LSProblemChildTest1el1v(LSProblem):
         opG['f'] = -1.0 * numpy.ones(opSize)
 
         return opL, opG
-    def setBoundaryConditions(self):
+    def set_boundary_conditions(self):
         weight = 1.0
         leftValue = 3.0; rightValue = 3.0
-        self.Ke[0][0, 0] += weight
-        self.Ge[0][0] += weight * leftValue
-        self.Ke[-1][-1, -1] += weight
-        self.Ge[-1][-1] += weight * rightValue
+        self.k_el[0][0, 0] += weight
+        self.g_el[0][0] += weight * leftValue
+        self.k_el[-1][-1, -1] += weight
+        self.g_el[-1][-1] += weight * rightValue
 
 class LSProblemChildTestNelNv(LSProblem):
     """Class for testing a poisson problem in 2 variables on N elements."""
-    def __init__(self, theMesh):
-        super().__init__(theMesh)
-        self.solveLinear()
-    def setEquations(self, el):
+    def __init__(self, mesh):
+        super().__init__(mesh)
+        self.solve_linear()
+    def set_equations(self, el):
         opSize = len(self.mesh.gm[el]) / self.mesh.number_of_variables
         opL = {}; opG = {}
 
@@ -293,20 +293,20 @@ class LSProblemChildTestNelNv(LSProblem):
         opG['g'] = -1.0 * numpy.ones(opSize)
 
         return opL, opG
-    def setBoundaryConditions(self):
+    def set_boundary_conditions(self):
         weight = 1.0
         leftValue = 3.0; rightValue = -1.0
-        self.Ke[0][0, 0] += weight
-        self.Ge[0][0] += weight * leftValue
-        self.Ke[-1][-1, -1] += weight
-        self.Ge[-1][-1] += weight * rightValue
+        self.k_el[0][0, 0] += weight
+        self.g_el[0][0] += weight * leftValue
+        self.k_el[-1][-1, -1] += weight
+        self.g_el[-1][-1] += weight * rightValue
 
 class NonLinearProblemTest(LSProblem):
     """Class for testing a poisson problem in 2 variables on N elements."""
-    def __init__(self, theMesh):
-        super().__init__(theMesh)
-        self.solveNonLinear()
-    def setEquations(self, el):
+    def __init__(self, mesh):
+        super().__init__(mesh)
+        self.solve_nonlinear()
+    def set_equations(self, el):
         opSize = len(self.mesh.gm[el]) / self.mesh.number_of_variables
         opL = {}; opG = {}
         x = self.mesh.x[self.mesh.gm[el]]
@@ -316,18 +316,18 @@ class NonLinearProblemTest(LSProblem):
         opG['f'] = 2*x**3 - 6*x**2 + 2*x + 2
 
         return opL, opG
-    def setBoundaryConditions(self):
+    def set_boundary_conditions(self):
         weight = 1.0
         leftValue = 1.0
-        self.Ke[0][0, 0] += weight
-        self.Ge[0][0] += weight * leftValue
+        self.k_el[0][0, 0] += weight
+        self.g_el[0][0] += weight * leftValue
 
 class TorsionalProblemTest(LSProblem):
     """Class for testing a torsional problem in N variables on N elements."""
-    def __init__(self, theMesh):
-        super().__init__(theMesh)
-        self.solveLinearSlab()
-    def setEquations(self, el):
+    def __init__(self, mesh):
+        super().__init__(mesh)
+        self.solve_linear_slab()
+    def set_equations(self, el):
         opL = {}; opG = {}
         opSize = len(self.mesh.gm[el]) / self.mesh.number_of_variables
         x = self.mesh.x[self.mesh.gm[el]]
@@ -347,17 +347,17 @@ class TorsionalProblemTest(LSProblem):
         opG['x0'] = Zero    #
 
         return opL, opG
-    def setBoundaryConditions(self):
+    def set_boundary_conditions(self):
         weight = 1.0
         initialSpeed = 0.0; initialPosition = 5.0
-        self.Ke[0][0, 0] += weight
-        self.Ge[0][0] += weight * initialSpeed
-        self.Ke[0][5, 5] += weight
-        self.Ge[0][5] += weight * initialPosition
+        self.k_el[0][0, 0] += weight
+        self.g_el[0][0] += weight * initialSpeed
+        self.k_el[0][5, 5] += weight
+        self.g_el[0][5] += weight * initialPosition
 
 class TorsionalProblemTestNv(LSProblem):
     """Class for testing a torsional problem in N variables on N elements."""
-    def setEquations(self, el):
+    def set_equations(self, el):
         opL = {}; opG = {}
         opSize = len(self.mesh.gm[el]) / self.mesh.number_of_variables
         x = self.mesh.x[self.mesh.gm[el][:opSize]]
@@ -416,17 +416,17 @@ class TorsionalProblemTestNv(LSProblem):
         opG[vi] = Zero    #F_n
 
         return opL, opG
-    def setBoundaryConditions(self):
+    def set_boundary_conditions(self):
         initialSpeed = 0.0
         initialPosition = 0.0
 
         weight = 10.0
         x0index = self.mesh.element_orders[0] + 1
 
-        self.Ke[0][0, 0] += weight
-        self.Ge[0][0] += weight * initialSpeed
-        self.Ke[0][x0index, x0index] += weight
-        self.Ge[0][x0index] += weight * initialPosition
+        self.k_el[0][0, 0] += weight
+        self.g_el[0][0] += weight * initialSpeed
+        self.k_el[0][x0index, x0index] += weight
+        self.g_el[0][x0index] += weight * initialPosition
 
 
 # test_math()

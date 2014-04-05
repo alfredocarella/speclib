@@ -25,11 +25,11 @@ class Iterator(object):
             problem.f_old = problem.f.copy()
 
             if len(problem.mesh.gm[0]) == problem.mesh.dof_nv:
-                problem.f, num_cg_it = conj_grad(problem.Ke[0], problem.Ge[0])
+                problem.f, num_cg_it = conj_grad(problem.k_el[0], problem.g_el[0])
             else:
-                problem.f, num_cg_it = conj_grad_elem(problem.Ke, problem.Ge, problem.mesh.gm, problem.mesh.dof_nv)
+                problem.f, num_cg_it = conj_grad_elem(problem.k_el, problem.g_el, problem.mesh.gm, problem.mesh.dof_nv)
 
-            problem.residual = problem.computeResidual(list_of_elements)
+            problem.residual = problem.compute_residual(list_of_elements)
             self.delta = numpy.linalg.norm(problem.f - problem.f_old) / numpy.linalg.norm(problem.f)
 
             self.number_of_iterations += 1
