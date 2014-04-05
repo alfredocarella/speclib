@@ -1,5 +1,4 @@
 import math    # for math.sqrt() in conjGrad()
-
 import numpy
 
 
@@ -173,12 +172,7 @@ def gll(number_of_points, x_min=-1.0, x_max=1.0, tol=1e-14):
 
     quad_weights = numpy.zeros(number_of_points)
 
-    if number_of_points < 3:
-        for i in range(number_of_points):
-            L = legendre_polynomial(max_order, quad_points[i])
-            quad_weights[i] = 2.0 / (max_order * number_of_points * L ** 2.0)
-        return quad_points, quad_weights
-    else:
+    if number_of_points > 3:
         # These points are needed as start (seed) values for the Newton iteration
         gl_points, gl_weights = gauss_legendre(max_order)
         start_values = numpy.zeros(number_of_points)
@@ -190,14 +184,16 @@ def gll(number_of_points, x_min=-1.0, x_max=1.0, tol=1e-14):
             p_old = 0.0
             while abs(quad_points[i] - p_old) > tol:
                 p_old = quad_points[i]
-                L = legendre_polynomial(max_order, p_old)
-                Ld = legendre_derivative(max_order, p_old)
-                quad_points[i] = p_old + ((1.0 - p_old ** 2.0) * Ld) / (max_order * number_of_points * L)
+                l = legendre_polynomial(max_order, p_old)
+                dl = legendre_derivative(max_order, p_old)
+                quad_points[i] = p_old + ((1.0 - p_old ** 2.0) * dl) / (max_order * number_of_points * l)
+    else:
+        pass
 
-        # This loop finds the associated weights
-        for i in range(number_of_points):
-            L = legendre_polynomial(max_order, quad_points[i])
-            quad_weights[i] = 2.0 / (max_order * number_of_points * L ** 2.0)
+    # This loop finds the associated weights
+    for i in range(number_of_points):
+        l = legendre_polynomial(max_order, quad_points[i])
+        quad_weights[i] = 2.0 / (max_order * number_of_points * l ** 2.0)
 
     # Mapping [-1,1] -> [x_min, x_max]
     if (x_min is not None) and (x_max is not None):
@@ -229,7 +225,7 @@ def lagrange_derivative_matrix_gll(np):
             if i == j:
                 pass    # D[i,j]=0 for the main diagonal
             else:
-                # Eq. 4.34 in DeMaerschalck2003
+                # Eq. 4.34 in "DeMaerschalck2003"
                 gll_derivative_matrix[i, j] = legendre_polynomial(np-1, points[i]) / (legendre_polynomial(np-1, points[j]) * (points[i] - points[j]))
 
     gll_derivative_matrix[0, 0] = -np * (np-1) / 4.0
@@ -260,7 +256,7 @@ def lagrange_interpolating_matrix(x_in, x_out):
 
 def legendre_derivative(n, x):
     """
-    Returns the the value of the derivative of the n'th Legendre polynomial evaluated at the coordinate x. The input
+    Returns the the value of the derivative of the n_th Legendre polynomial evaluated at the coordinate x. The input
     'x' can be a vector of points.
 
     Syntax: Ld = legendre_derivative(n,x)
@@ -278,7 +274,7 @@ def legendre_derivative(n, x):
         lagrange_derivative = x**(n-1.0) * (1.0/2.0) * n * (n+1.0)
     else:
         # Recurrence 4.5.10 in 'Press1993.pdf'
-        for i in range(1,n):
+        for i in range(1, n):
             lagrange_polynomial[i+1] = (2.0*i+1)/(i+1.0)*x*lagrange_polynomial[i] - i/(i+1.0)*lagrange_polynomial[i-1]
         lagrange_derivative = n/(1.0-x**2.0)*lagrange_polynomial[n-1] - n*x/(1.0-x**2.0)*lagrange_polynomial[n]
 
@@ -287,7 +283,7 @@ def legendre_derivative(n, x):
 
 def legendre_polynomial(n, x):
     """
-    Returns the value of the n'th Legendre polynomial evaluated at the coordinate 'x'. The input 'x' can be a vector
+    Returns the value of the n_th Legendre polynomial evaluated at the coordinate 'x'. The input 'x' can be a vector
     of points.
 
     Syntax: L = legendre_polynomial(n,x)
@@ -309,5 +305,4 @@ def legendre_polynomial(n, x):
         pass
 
     return lagrange_poly[n, :]
-
 
