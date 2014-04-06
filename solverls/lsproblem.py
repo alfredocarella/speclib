@@ -155,5 +155,6 @@ class LSProblem(object):
             f_elem, cg_iterations = conj_grad(self.k_el[0], self.g_el[0])
             self.f[self.mesh.gm[el_]] = f_elem
 
-    def solve_nonlinear_slab(self):  # TODO: Would be very useful, but it is complex to implement right now
+    # TODO: Would be very useful, but it is complex to implement right now
+    def solve_nonlinear_slab(self):
         pass
