@@ -14,11 +14,11 @@ class Iterator(object):
         self.delta = 1.0
         self.number_of_iterations = 0
         self.converged = False
-        self.not_converging = False
+        self.converging = True
         self.reached_max_it = False
 
     def iterate(self, problem, set_operators, set_boundary_conditions, list_of_elements=None):
-        while (not self.converged) and (not self.not_converging) and (not self.reached_max_it):
+        while (not self.converged) and (self.converging) and (not self.reached_max_it):
 
             set_operators(list_of_elements)
             set_boundary_conditions()
@@ -39,7 +39,7 @@ class Iterator(object):
                 self.converged = True
             elif self.delta < self.min_delta:
                 print("Equal consecutive nonlinear iterations. Delta = %r" % self.delta)
-                self.not_converging = True
+                self.converging = False
             elif self.number_of_iterations >= self.max_nonlinear_it:
                 print("Stopping after having reached %r nonlinear iterations." % self.number_of_iterations)
                 self.reached_max_it = True
