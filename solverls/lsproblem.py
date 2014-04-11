@@ -140,7 +140,7 @@ class LSProblem(object):
         it = Iterator(min_residual=1e-20, max_nonlinear_it=50, min_delta=1e-16)
         it.iterate(self, self.set_operators, self.set_boundary_conditions, [0, 1])
 
-        print(u"Iterations: {0!r:s}  -  Residual: {1:04.2e}  -  delta = {2:04.2e}".format(it.number_of_iterations,
+        print("Iterations: {0!r:s}  -  Residual: {1:04.2e}  -  delta = {2:04.2e}".format(it.number_of_iterations,
                                                                                           self.residual, it.delta))
 
     def solve_linear_slab(self):

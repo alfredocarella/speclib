@@ -49,6 +49,7 @@ def test_math():    # Testing some of the mathematical routines
 def test_mesh1d():    # Testing the mesh generation (plotting is not tested here)
     macro_grid, orders = numpy.array((0.0, 1.0, 2.0, 3.0)), numpy.array((3, 4, 2))
     list_of_variables = ['T', 'pres', 'quality']
+
     my_mesh1d = Mesh1d(macro_grid, orders, list_of_variables)
     
     numpy.testing.assert_array_equal(my_mesh1d.element_orders, orders)
@@ -87,7 +88,7 @@ def test_problem_1el_1v():    # Testing results for a simple problem (1 var, 1 e
     my_problem = LSProblemChildTest1el1v(my_mesh1d)
 
     my_problem.residual = my_problem.compute_residual()
-    assert_almost_equal(my_problem.residual, 0)
+    assert_almost_equal(my_problem.residual, 0.0)
     # numpy.testing.assert_allclose(
         # my_problem.Ke, my_problem.opL[0].T.dot(numpy.diag(my_problem.mesh.longQuadWeights[0])).dot(my_problem.opL[
         # 0])) #<--Missing BCs
@@ -115,12 +116,13 @@ def test_problem_1el_1v():    # Testing results for a simple problem (1 var, 1 e
 #<only residual was tested>
 
 
-# TODO: THE FOLLOWING AUTOMATIC ('assert'-like) TESTS ARE YET TO BE WRITTEN
+# TODO: The class "LsProblem" should be tested comprehensively in just one test
 def test_problem_nel_nv():    # Testing a problem w/ multiple variables and elements
     macro_grid, orders, list_of_variables = numpy.array((0.0, 1.0, 2.0)), numpy.array((3, 3)), ['f', 'g']
-    print("macroGrid = %r - orders = %r - list_of_variables = %r" % (macro_grid, orders, list_of_variables))
     my_mesh1d = Mesh1d(macro_grid, orders, list_of_variables)
-    print("my_mesh1d = Mesh1d(macroGrid, orders, list_of_variables)")
+    numpy.testing.assert_array_equal(my_mesh1d.macro_nodes, macro_grid)
+    numpy.testing.assert_array_equal(my_mesh1d.element_orders, orders)
+    assert_equal(my_mesh1d.list_of_variables, list_of_variables)
 
     my_problem = TestLSProblemNelNv(my_mesh1d)
     my_problem.residual = my_problem.compute_residual()
@@ -461,12 +463,3 @@ class TorsionalProblemTestNv(LSProblem):
         self.g_el[0][0] += weight * initial_speed
         self.k_el[0][x0index, x0index] += weight
         self.g_el[0][x0index] += weight * initial_position
-
-
-# test_math()
-# test_mesh1d()
-# testingProblem1el1v()
-# testingProblemNelNv()
-# testingProblemNonLinear()
-# testingProblemTorsional1v()
-# testingProblemTorsionalNv()
