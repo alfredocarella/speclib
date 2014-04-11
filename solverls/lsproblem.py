@@ -117,7 +117,8 @@ class LSProblem(object):
             for varRow_ in self.mesh.list_of_variables:
                 for varCol_ in self.mesh.list_of_variables:
                     if (varRow_+'.'+varCol_) in opl_dict:
-                        self.op_l[el_][numpy.ix_(self.mesh.pos[elem][varRow_], self.mesh.pos[elem][varCol_])] += opl_dict[varRow_+'.'+varCol_]
+                        self.op_l[el_][numpy.ix_(self.mesh.pos[elem][varRow_], self.mesh.pos[elem][varCol_])] += \
+                            opl_dict[varRow_+'.'+varCol_]
                 if varRow_ in opg_dict:
                     self.op_g[el_][self.mesh.pos[elem][varRow_]] += opg_dict[varRow_]
 
@@ -139,7 +140,8 @@ class LSProblem(object):
         it = Iterator(min_residual=1e-20, max_nonlinear_it=50, min_delta=1e-16)
         it.iterate(self, self.set_operators, self.set_boundary_conditions, [0, 1])
 
-        print("Iterations: %r  -  Residual: %04.2e  -  delta = %04.2e" % (it.number_of_iterations, self.residual, it.delta))
+        print(u"Iterations: {0!r:s}  -  Residual: {1:04.2e}  -  delta = {2:04.2e}".format(it.number_of_iterations,
+                                                                                          self.residual, it.delta))
 
     def solve_linear_slab(self):
         self.f = numpy.zeros(self.mesh.dof_nv)

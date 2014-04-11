@@ -1,6 +1,6 @@
 from nose.tools import *
 import numpy
-
+import numpy.testing
 from solverls import speclib
 from solverls.lsproblem import LSProblem
 from solverls.mesh1d import Mesh1d
@@ -19,7 +19,8 @@ def test_math():    # Testing some of the mathematical routines
     #     *legendrePolynomial(n, x)
     # *lagrangeInterpolantMatrix(xIn, xOut)
     #
-    # I automatically test only the higher level functions, assuming that if they are OK, then the functions used by them are also OK
+    # I automatically test only the higher level functions, assuming that if
+    # they are OK, then the functions used by them are also OK
     """
     
     for number_of_points in range(2, 5):
@@ -46,7 +47,8 @@ def test_math():    # Testing some of the mathematical routines
     
 
 def test_mesh1d():    # Testing the mesh generation (plotting is not tested here)
-    macro_grid, orders, list_of_variables = numpy.array((0.0, 1.0, 2.0, 3.0)), numpy.array((3, 4, 2)), ['T', 'pres', 'quality']
+    macro_grid, orders = numpy.array((0.0, 1.0, 2.0, 3.0)), numpy.array((3, 4, 2))
+    list_of_variables = ['T', 'pres', 'quality']
     my_mesh1d = Mesh1d(macro_grid, orders, list_of_variables)
     
     numpy.testing.assert_array_equal(my_mesh1d.element_orders, orders)
@@ -62,11 +64,15 @@ def test_mesh1d():    # Testing the mesh generation (plotting is not tested here
     integral_test_value = 0
     for el in range(my_mesh1d.number_of_elements):
         integral_test_value += my_mesh1d.quadrature_points[el].dot(my_mesh1d.quadrature_weights[el])
-        assert_almost_equal(my_mesh1d.jac[el], (my_mesh1d.x[my_mesh1d.gm_1v[el][-1]]-my_mesh1d.x[my_mesh1d.gm_1v[el][0]])/2.0 )
+        assert_almost_equal(
+            my_mesh1d.jac[el], (my_mesh1d.x[my_mesh1d.gm_1v[el][-1]]-my_mesh1d.x[my_mesh1d.gm_1v[el][0]])/2.0)
         numpy.testing.assert_array_equal(my_mesh1d.gm[el][:my_mesh1d.element_orders[el]+1], my_mesh1d.gm_1v[el])
         numpy.testing.assert_array_equal(my_mesh1d.quadrature_points[el], my_mesh1d.x[my_mesh1d.gm_1v[el]])
-        numpy.testing.assert_array_equal(my_mesh1d.dx[el], speclib.lagrange_derivative_matrix_gll(my_mesh1d.element_orders[el]+1)/my_mesh1d.jac[el])
-        numpy.testing.assert_array_equal(my_mesh1d.long_quadrature_weights[el], numpy.tile(my_mesh1d.quadrature_weights[el], my_mesh1d.number_of_variables))
+        numpy.testing.assert_array_equal(
+            my_mesh1d.dx[el], speclib.lagrange_derivative_matrix_gll(my_mesh1d.element_orders[el]+1)/my_mesh1d.jac[el])
+        numpy.testing.assert_array_equal(
+            my_mesh1d.long_quadrature_weights[el],
+            numpy.tile(my_mesh1d.quadrature_weights[el], my_mesh1d.number_of_variables))
         pos_var_test_value = []
         for var in my_mesh1d.list_of_variables:
             pos_var_test_value = numpy.append(pos_var_test_value, my_mesh1d.pos[el][var])
@@ -75,14 +81,16 @@ def test_mesh1d():    # Testing the mesh generation (plotting is not tested here
         
     
 def test_problem_1el_1v():    # Testing results for a simple problem (1 var, 1 elem)
-    macro_grid, orders, list_of_variables = numpy.array((0.0,2.0)), numpy.array((4)), ['f']
+    macro_grid, orders, list_of_variables = numpy.array((0.0, 2.0)), numpy.array(4), ['f']
     my_mesh1d = Mesh1d(macro_grid, orders, list_of_variables)
 
     my_problem = LSProblemChildTest1el1v(my_mesh1d)
 
     my_problem.residual = my_problem.compute_residual()
     assert_almost_equal(my_problem.residual, 0)
-    # numpy.testing.assert_allclose(my_problem.Ke, my_problem.opL[0].T.dot(numpy.diag(my_problem.mesh.longQuadWeights[0])).dot(my_problem.opL[0])) #<--Missing BCs
+    # numpy.testing.assert_allclose(
+        # my_problem.Ke, my_problem.opL[0].T.dot(numpy.diag(my_problem.mesh.longQuadWeights[0])).dot(my_problem.opL[
+        # 0])) #<--Missing BCs
 
     print("my_problem.opL = %r" % my_problem.op_l)
     print("my_problem.opG = %r" % my_problem.op_g)
@@ -126,7 +134,7 @@ def test_problem_nel_nv():    # Testing a problem w/ multiple variables and elem
     # print('\nThe "elemGM" solution vector is %r\n' % (my_problem.f))
     print("The residual for this problem is %04.2e" % my_problem.residual)
 
-    myMemo = """
+    my_memo = """
     2013-11-27: A MINIMUM EXAMPLE IS WORKING!!! :-)
 
     Check-list for project (pending tasks):
@@ -143,7 +151,7 @@ def test_problem_nel_nv():    # Testing a problem w/ multiple variables and elem
     - Find out how to do a code profiling
     """
 
-    print(myMemo + '\n' + "testingProblemNelNv(): Execution complete!")
+    print(my_memo + '\n' + "testingProblemNelNv(): Execution complete!")
 
 
 def testing_problem_non_linear():    # Testing iterative routine for solving a non-linear problem
@@ -184,10 +192,12 @@ def test_problem_torsional_1v():    # Testing a torsional vibration problem (1 m
 
     my_mesh1d = Mesh1d(macro_grid, orders, list_of_variables)
     my_problem = TorsionalProblemTest(my_mesh1d)
-    my_problem.plot_solution()#filename='testingProblemTorsional1v.pdf')
+    my_problem.plot_solution()  # filename='testingProblemTorsional1v.pdf')
 
     speclib.info("'TorsionalProblemTest.computeResidual()' does not work.")
-    # # The following line will not work because my_problem.opL and and my_problem.opG have been reduced to 1 element. The full info is not saved
+
+    # The following line will not work because my_problem.opL and and my_problem.opG have been reduced to 1 element
+    # and therefore the full problem information is not saved
     # print("The residual for this problem is %04.2e" % my_problem.computeResidual())
 
     my_memo = """
@@ -227,7 +237,8 @@ def test_problem_torsional_nv():    # Testing a torsional vibration problem (N m
     my_problem.plot_solution()  # filename='testingProblemTorsionalNv.pdf')
 
     speclib.info("'TorsionalProblemTestNv.computeResidual()' does not work.")
-    # # The following line will not work because my_problem.opL and and my_problem.opG have been reduced to 1 element. The full info is not saved
+    # The following line will not work because my_problem.opL and and my_problem.opG have been reduced to 1 element
+    # and therefore the full problem information is not saved
     # print("The residual for this problem is %04.2e" % my_problem.computeResidual())
 
     my_memo = """
@@ -244,7 +255,7 @@ def test_problem_torsional_nv():    # Testing a torsional vibration problem (N m
 
     print(my_memo + '\n' + "testingProblemTorsionalNv(): Execution complete!")
 
-    print("range(1,1) = %r" % range(1,1))
+    print("range(1,1) = %r" % range(1, 1))
 
 
 # ********************************************************** #
@@ -260,11 +271,9 @@ class LSProblemChildTest1el1v(LSProblem):
 
     def set_equations(self, el):
         operator_size = len(self.mesh.gm[el]) / self.mesh.number_of_variables
-        op_l = {}
-        op_g = {}
 
-        op_l['f.f'] = self.mesh.dx[el].dot(self.mesh.dx[el])
-        op_g['f'] = -1.0 * numpy.ones(operator_size)
+        op_l = {'f.f': self.mesh.dx[el].dot(self.mesh.dx[el])}
+        op_g = {'f': -1.0 * numpy.ones(operator_size)}
 
         return op_l, op_g
 
@@ -286,16 +295,13 @@ class TestLSProblemNelNv(LSProblem):
 
     def set_equations(self, el):
         operator_size = len(self.mesh.gm[el]) / self.mesh.number_of_variables
-        op_l = {}
-        op_g = {}
+        op_l = {'f.f': self.mesh.dx[el],
+                'f.g': -1.0 * numpy.identity(operator_size),
+                'g.f': numpy.zeros((operator_size, operator_size)),
+                'g.g': self.mesh.dx[el]}
 
-        op_l['f.f'] = self.mesh.dx[el]
-        op_l['f.g'] = -1.0 * numpy.identity(operator_size)
-        op_l['g.f'] = numpy.zeros((operator_size, operator_size))
-        op_l['g.g'] = self.mesh.dx[el]
-
-        op_g['f'] = numpy.zeros(operator_size)
-        op_g['g'] = -1.0 * numpy.ones(operator_size)
+        op_g = {'f': numpy.zeros(operator_size),
+                'g': -1.0 * numpy.ones(operator_size)}
 
         return op_l, op_g
 

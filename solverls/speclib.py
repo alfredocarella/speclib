@@ -37,7 +37,8 @@ def conj_grad_elem(k_elem, g_elem, gm, dof, x=None, tol=1.0e-12):
         local_index = numpy.arange(len(gm[el_]))
         r[gm[el_]] += g_elem[el_][local_index] - mat_vec_local_product[local_index]
 
-    s = r.copy()
+    # s = r.copy()
+    s = r
     cg_iteration = 0
 
     for cg_iteration in range(dof):
@@ -226,7 +227,8 @@ def lagrange_derivative_matrix_gll(np):
                 pass    # D[i,j]=0 for the main diagonal
             else:
                 # Eq. 4.34 in "DeMaerschalck2003"
-                gll_derivative_matrix[i, j] = legendre_polynomial(np-1, points[i]) / (legendre_polynomial(np-1, points[j]) * (points[i] - points[j]))
+                gll_derivative_matrix[i, j] = legendre_polynomial(np-1, points[i]) / \
+                    (legendre_polynomial(np-1, points[j]) * (points[i] - points[j]))
 
     gll_derivative_matrix[0, 0] = -np * (np-1) / 4.0
     gll_derivative_matrix[np-1, np-1] = np * (np-1) / 4.0
@@ -249,7 +251,8 @@ def lagrange_interpolating_matrix(x_in, x_out):
         for j_basis in range(input_length):    # evaluation coordinates
             if i_basis != j_basis:
                 for k_coord in range(output_length):
-                    interpolating_matrix[k_coord, i_basis] *= (x_out[k_coord]-x_in[j_basis]) / (x_in[i_basis]-x_in[j_basis])
+                    interpolating_matrix[k_coord, i_basis] *= (x_out[k_coord]-x_in[j_basis]) / \
+                                                              (x_in[i_basis]-x_in[j_basis])
 
     return interpolating_matrix    # Interpolating matrix
 
@@ -305,4 +308,3 @@ def legendre_polynomial(n, x):
         pass
 
     return lagrange_poly[n, :]
-
