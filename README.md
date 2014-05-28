@@ -13,5 +13,5 @@ Updates:
 2014-02-15. First commit. Work in progress, no functionality yet
 
 2014-04-12. A few classes survived the tests and are working: "Mesh1d", "LSProblem". 
-            The class "Iterator" is still preliminar work. 
+            The class "Iterator" is still preliminary work.
             The whole package "speclib" appears to be doing its job very well.
