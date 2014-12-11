@@ -5,7 +5,7 @@ import pylab
 from solverls.iterator import Iterator
 from solverls.speclib import info, lagrange_interpolating_matrix, conj_grad_elem, conj_grad
 
-__author__ = 'raul'
+__author__ = 'Alfredo Carella'
 
 
 class LSProblem(object):

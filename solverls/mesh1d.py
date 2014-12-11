@@ -2,7 +2,7 @@ import matplotlib.pyplot
 import numpy
 from solverls.speclib import lagrange_derivative_matrix_gll, gll
 
-__author__ = 'raul'
+__author__ = 'Alfredo Carella'
 
 
 class Mesh1d(object):

@@ -1,6 +1,7 @@
 import math    # for math.sqrt() in conjGrad()
 import numpy
 
+__author__ = 'Alfredo Carella'
 
 # ********************************************************** #
 # ********************** LIBRARY CODE ********************** #
@@ -148,7 +149,7 @@ def gauss_legendre(np):
     # This loop finds the associated weights
     w = numpy.zeros(np)
     for j in range(0, np):
-        w[j] = 2.0/((1-p[j]**2.0)*(legendre_derivative(np, p[j]))**2.0)
+        w[j] = 2.0/((1 - p[j]**2.0) * (legendre_derivative(np, p[j]))**2.0)
     return p, w
 
 
@@ -251,8 +252,8 @@ def lagrange_interpolating_matrix(x_in, x_out):
         for j_basis in range(input_length):    # evaluation coordinates
             if i_basis != j_basis:
                 for k_coord in range(output_length):
-                    interpolating_matrix[k_coord, i_basis] *= (x_out[k_coord]-x_in[j_basis]) / \
-                                                              (x_in[i_basis]-x_in[j_basis])
+                    interpolating_matrix[k_coord, i_basis] *= (x_out[k_coord] - x_in[j_basis]) / \
+                                                              (x_in[i_basis] - x_in[j_basis])
 
     return interpolating_matrix    # Interpolating matrix
 

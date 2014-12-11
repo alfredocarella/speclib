@@ -1,7 +1,7 @@
 import numpy
 from solverls.speclib import conj_grad, conj_grad_elem
 
-__author__ = 'raul'
+__author__ = 'Alfredo Carella'
 
 
 class Iterator(object):
