@@ -3,7 +3,7 @@ import matplotlib.pyplot
 import numpy
 import pylab
 from solverls.iterator import Iterator
-from solverls.speclib import info, lagrange_interpolating_matrix, conj_grad_elem, conj_grad
+from solverls.speclib import lagrange_interpolating_matrix, conj_grad_elem, conj_grad
 
 __author__ = 'Alfredo Carella'
 
@@ -25,8 +25,6 @@ class LSProblem(object):
 
     def compute_residual(self, list_of_elements=None):
         """Compute the Least-Squares total residual."""
-        # Int[(Lf-G)**2] + [f_a-f(a)]**2   <---The second term is missing.
-        # Therefore this formulation does not currently consider compliance with boundary conditions!
 
         if list_of_elements is None:
             list_of_elements = range(len(self.mesh.gm))
@@ -81,7 +79,7 @@ class LSProblem(object):
         return fig
 
     def set_boundary_conditions(self):
-        info("THIS FUNCTION MUST BE OVERRIDDEN IN CHILD CLASS")  # FIXME: Use an error instead of the "info" function
+        raise NotImplementedError("Child classes must implement this method.")
 
     def set_slab_boundary_conditions(self, elem):
         weight = 1.0
@@ -96,7 +94,7 @@ class LSProblem(object):
             self.g_el[0][gk_index] += weight * self.f[f_index]
 
     def set_equations(self, el):
-        info("THIS FUNCTION MUST BE OVERRIDDEN IN CHILD CLASS")  # FIXME: Use an error instead of the "info" function
+        raise NotImplementedError("Child classes must implement this method.")
 
     def set_operators(self, list_of_elements=None):
 
@@ -157,6 +155,6 @@ class LSProblem(object):
             f_elem, cg_iterations = conj_grad(self.k_el[0], self.g_el[0])
             self.f[self.mesh.gm[el_]] = f_elem
 
-    # TODO: Would be very useful, but it is complex to implement right now
+    # TODO: Should not be that difficult to implement
     def solve_nonlinear_slab(self):
         pass

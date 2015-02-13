@@ -183,7 +183,7 @@ def testing_problem_non_linear():    # Testing iterative routine for solving a n
     - Find out how to do a code profiling
     """
 
-    speclib.info("Execution complete!" + '\n' + my_memo)
+    print("Execution complete!" + '\n' + my_memo)
 
 
 def test_problem_torsional_1v():    # Testing a torsional vibration problem (1 mass)
@@ -196,7 +196,7 @@ def test_problem_torsional_1v():    # Testing a torsional vibration problem (1 m
     my_problem = TorsionalProblemTest(my_mesh1d)
     my_problem.plot_solution()  # filename='testingProblemTorsional1v.pdf')
 
-    speclib.info("'TorsionalProblemTest.computeResidual()' does not work.")
+    print("'TorsionalProblemTest.computeResidual()' does not work.")
 
     # The following line will not work because my_problem.opL and and my_problem.opG have been reduced to 1 element
     # and therefore the full problem information is not saved
@@ -238,7 +238,7 @@ def test_problem_torsional_nv():    # Testing a torsional vibration problem (N m
     my_problem.solve_linear_slab()
     my_problem.plot_solution()  # filename='testingProblemTorsionalNv.pdf')
 
-    speclib.info("'TorsionalProblemTestNv.computeResidual()' does not work.")
+    print("'TorsionalProblemTestNv.computeResidual()' does not work.")
     # The following line will not work because my_problem.opL and and my_problem.opG have been reduced to 1 element
     # and therefore the full problem information is not saved
     # print("The residual for this problem is %04.2e" % my_problem.computeResidual())
