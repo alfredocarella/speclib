@@ -9,9 +9,8 @@ __author__ = 'Alfredo Carella'
 
 def conj_grad_elem(k_elem, g_elem, gm, dof, x=None, tol=1.0e-12):
     """
-    Attempts to solve the system of linear equations A*x=b for x. The dof-by-dof coefficient matrix A must be
-    symmetric and positive definite (SPD), and should also be large and sparse.
-    The matrix A is only filled across squared blocks on its main diagonal, as results from a finite-element problem.
+    Attempts to solve the linear system Ax=b. The SPD matrix A should be sparse.
+    Matrices resulting from a finite-element problem are only filled across squared blocks on its main diagonal.
     The list Ke contains the non-empty blocks on matrix A, whose lengths need to match the lengths of the vectors in
     Ge. The list in gm is the gathering matrix specifying the position of Ke blocks in the matrix A and Ge blocks in
     vector b.
@@ -22,8 +21,6 @@ def conj_grad_elem(k_elem, g_elem, gm, dof, x=None, tol=1.0e-12):
     <list>    gm = a list of the nodes belonging to each element
     <int>    dof = degrees of freedom of the full system of equations
     <numpy.array>    x = initial iteration value for solution (default is zeros)
-    
-    Author    : Alfredo R. Carella <alfredocarella@gmail.com>
     """
 
     if x is None:
@@ -69,15 +66,11 @@ def conj_grad_elem(k_elem, g_elem, gm, dof, x=None, tol=1.0e-12):
 
 def conj_grad(a, b, x=None, tol=1.0e-12):
     """
-    Attempts to solve the system of linear equations A*x=b for x. The n-by-n coefficient matrix A must be symmetric and
-    positive definite, and should also be large and sparse. The column vector b must have n-length.
+    Attempts to solve the linear system Ax=b. The SPD matrix A should be sparse.
                    
-    Syntax: x = conjGrad(a, b, x=None, TOL=1.0e-9)
-    <numpy.ndarray>    a = n-by-n matrix (must be SPD)
-    <numpy.array>    b = n-length vector
-    <numpy.array>    x = initial iteration value for solution (default is zeros)
-    
-    Author    : Alfredo R. Carella <alfredocarella@gmail.com>
+    a = n-by-n matrix (must be SPD)
+    b = n-length vector
+    x = initial iteration value for solution (default is zeros)
     """
 
     if x is None:
@@ -102,32 +95,14 @@ def conj_grad(a, b, x=None, tol=1.0e-12):
     return x, cg_iteration
 
 
-def info(msg):
-    """
-    Prints a message specifying the name of the caller function.
-                   
-    Syntax: info('str')
-    
-    Author    : Alfredo R. Carella <alfredocarella@gmail.com>
-    """
-    import inspect
-    current_frame = inspect.currentframe()
-    call_frame = inspect.getouterframes(current_frame, 2)
-    print("Msg from \"%s()\": %s" % (call_frame[1][3], msg))
-    return None
-
-
 def gauss_legendre(np):
     """
-    Returns separate vectors containing the points and weights for the Gauss Legendre quadrature rule for the interval
-    [-1, 1].
+    Returns a tuple of lists with points and weights for the Gauss Legendre quadrature for the interval [-1, 1].
                    
-    Syntax: p, w = gauss_lobatto_legendre(np)
-    <int>    np = number of points
-    <float>    p = quadrature points
-    <float>    w = quadrature weight
-    
-    Author    : Alfredo R. Carella <alfredocarella@gmail.com>
+    Syntax: p, w = gauss_legendre(np)
+    np = number of points
+    p = quadrature points
+    w = quadrature weight
     """
 
     # This part finds the A-matrix
@@ -155,17 +130,15 @@ def gauss_legendre(np):
 
 def gll(number_of_points, x_min=-1.0, x_max=1.0, tol=1e-14):
     """
-    Returns two separate vectors containing the points and weights for the Gauss Lobatto Legendre quadrature rule for
-    the interval [x_min, x_max].
-                   
+    Returns a tuple of lists with points and weights for the Gauss Lobatto Legendre quadrature for the interval
+    [x_min, x_max].
+
     Syntax: p, w = gll(np, x_min, x_max)
-    <int>    np = number of points
-    <float>    x_min = left interval boundary
-    <float>    x_max = right interval boundary
-    <float>    p = quadrature points
-    <float>    w = quadrature weight
-    
-    Author    : Alfredo R. Carella <alfredocarella@gmail.com>
+    np = number of points
+    x_min = left interval boundary
+    x_max = right interval boundary
+    p = quadrature points
+    w = quadrature weight
     """
 
     max_order = number_of_points-1
@@ -189,8 +162,6 @@ def gll(number_of_points, x_min=-1.0, x_max=1.0, tol=1e-14):
                 l = legendre_polynomial(max_order, p_old)
                 dl = legendre_derivative(max_order, p_old)
                 quad_points[i] = p_old + ((1.0 - p_old ** 2.0) * dl) / (max_order * number_of_points * l)
-    else:
-        pass
 
     # This loop finds the associated weights
     for i in range(number_of_points):
@@ -213,9 +184,7 @@ def lagrange_derivative_matrix_gll(np):
     D_{ij} = l'_j(x_i) for i,j = 0:np-1
                    
     Syntax: D = lagrange_derivative_matrix_gll(np, x)
-    <int>    np = number of points
-    
-    Author    : Alfredo R. Carella <alfredocarella@gmail.com>
+    np = number of points
     """
 
     gll_derivative_matrix = numpy.zeros((np, np))
@@ -239,8 +208,7 @@ def lagrange_derivative_matrix_gll(np):
 
 def lagrange_interpolating_matrix(x_in, x_out):
     """
-    Returns a matrix 'L' that yields 'f(x_out)=L*f(x_in)', where x_in are the gauss-lobatto-legendre interpolating
-    nodes of order n+1 and x_out is an arbitrary set of points.
+    Returns a matrix 'L' that yields 'f(x_out) = L f(x_in)' via Lagrange interpolation.
     """
 
     input_length = len(x_in)
@@ -263,11 +231,8 @@ def legendre_derivative(n, x):
     Returns the the value of the derivative of the n_th Legendre polynomial evaluated at the coordinate x. The input
     'x' can be a vector of points.
 
-    Syntax: Ld = legendre_derivative(n,x)
-    <int>    n = polynomial order 0,1,...
-    <float>    x = coordinate -1 =< x =< 1
-    
-    Author    : Alfredo R. Carella <alfredocarella@gmail.com>
+    n = polynomial order 0,1,...
+    x = coordinate -1 =< x =< 1
     """
 
     lagrange_polynomial = numpy.zeros(n+1)
@@ -290,11 +255,8 @@ def legendre_polynomial(n, x):
     Returns the value of the n_th Legendre polynomial evaluated at the coordinate 'x'. The input 'x' can be a vector
     of points.
 
-    Syntax: L = legendre_polynomial(n,x)
-    <int>    n = polynomial order 0,1,...
-    <float>    x = coordinate -1 =< x =< 1
-    
-    Author    : Alfredo R. Carella <alfredocarella@gmail.com>
+    n = polynomial order 0,1,...
+    x = coordinate -1 =< x =< 1
     """
 
     lagrange_poly = numpy.zeros((n+1, len(numpy.atleast_1d(x))))
@@ -305,7 +267,5 @@ def legendre_polynomial(n, x):
     if n > 1:
         for i in range(1, n):
             lagrange_poly[i+1, :] = ((2.0*i+1.0) / (i+1.0)*x) * lagrange_poly[i, :] - i / (i+1.0)*lagrange_poly[i-1, :]
-    else:
-        pass
 
     return lagrange_poly[n, :]
