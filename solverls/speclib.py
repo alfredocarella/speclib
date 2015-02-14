@@ -1,4 +1,4 @@
-import math    # for math.sqrt() in conjGrad()
+import math
 import numpy
 
 __author__ = 'Alfredo Carella'
@@ -6,8 +6,10 @@ __author__ = 'Alfredo Carella'
 # ********************************************************** #
 # ********************** LIBRARY CODE ********************** #
 # ********************************************************** #
+#TODO: Remove 'dof' parameter from conj_grad_elem(...), it can be calculated from 'gm'
 
-def conj_grad_elem(k_elem, g_elem, gm, dof, x=None, tol=1.0e-12): #TODO: Remove 'dof' parameter, it can be calculated from 'gm'
+
+def conj_grad_elem(k_elem, g_elem, gm, dof, x=None, tol=1.0e-12):
     """
     Attempts to solve the linear system Ax=b. The SPD matrix A should be sparse.
     Matrices resulting from a finite-element problem are only filled across squared blocks on its main diagonal.
