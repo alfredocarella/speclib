@@ -16,10 +16,10 @@ def conj_grad_elem(k_elem, g_elem, gm, dof, x=None, tol=1.0e-12):
     vector b.
                    
     Syntax: x = conjGradElem(Ke, Ge, gm, dof, x=None, TOL=1.0e-9)
-    <list>    Ke = list of dof-by-dof <numpy.ndarray> matrices (must be SPD)
-    <list>    Ge = a list of dof-length <numpy.array> vectors
-    <list>    gm = a list of the nodes belonging to each element
-    <int>    dof = degrees of freedom of the full system of equations
+    Ke = list of dof-by-dof <numpy.ndarray> matrices (must be SPD)
+    Ge = a list of dof-length <numpy.array> vectors
+    gm = a list of the nodes belonging to each element
+    dof = degrees of freedom of the full system of equations
     <numpy.array>    x = initial iteration value for solution (default is zeros)
     """
 

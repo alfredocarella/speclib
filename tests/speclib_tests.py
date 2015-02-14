@@ -6,45 +6,35 @@ from solverls.lsproblem import LSProblem
 from solverls.mesh1d import Mesh1d
 
 
-def test_math():    # Testing some of the mathematical routines
-    """
-    # The dependency-tree 'speclib' is:
-    #
-    # *GLL(number_of_points, x_min, x_max)
-    #     *gaussLegendre(number_of_points)
-    #         *legendreDerivative(n,x)
-    #     *legendreDerivative(n, x)
-    #     *legendrePolynomial(n, x)
-    # *lagrangeDerivativeMatrixGLL(number_of_points)
-    #     *legendrePolynomial(n, x)
-    # *lagrangeInterpolantMatrix(xIn, xOut)
-    #
-    # I automatically test only the higher level functions, assuming that if
-    # they are OK, then the functions used by them are also OK
-    """
-    
-    for number_of_points in range(2, 5):
-        x_min, x_max = 0, 4
-        number_of_interpolants = 30
-        delta = x_max - x_min
+def test_gll(number_of_points=5, x_min=-1, x_max=1):
+        points, weights = speclib.gll(number_of_points, x_min, x_max)
+        assert_equal(points[0], x_min)
+        assert_equal(points[-1], x_max)
+        assert_almost_equal(numpy.sum(weights), x_max - x_min)
 
-        # speclib.GLL(number_of_points, x_min, x_max) tested here
-        p, w = speclib.gll(number_of_points, x_min, x_max)
-        assert_equal(p[0], x_min)
-        assert_equal(p[-1], x_max)
-        assert_almost_equal(numpy.sum(w), delta)
 
-        # speclib.lagrangeDerivativeMatrixGLL(number_of_points) tested here
-        dx = speclib.lagrange_derivative_matrix_gll(number_of_points) * 2.0/delta
-        dp = dx.dot(p)
+def test_lagrange_derivative_matrix_gll(number_of_points=2, x_min=-1, x_max=1, points=[-1, 1]):
+        dx = speclib.lagrange_derivative_matrix_gll(number_of_points) * 2.0/(x_max-x_min)
+        dp = dx.dot(points)
         numpy.testing.assert_allclose(dp, numpy.ones(number_of_points))
 
-        # speclib.lagrangeInterpolantMatrix(x_in, x_out) tested here
-        x_in = p
-        x_out = numpy.linspace(x_min, x_max, number_of_interpolants)
+
+def test_lagrange_interpolating_matrix(x_in=[-1, 1], x_out=[-1, 0, 1]):
         l = speclib.lagrange_interpolating_matrix(x_in, x_out)
-        numpy.testing.assert_allclose(l.dot(dp), numpy.ones(number_of_interpolants))
-    
+        dx_matrix = speclib.lagrange_derivative_matrix_gll(len(x_in)) * 2.0/(x_in[-1]-x_in[0])
+        dx_in = dx_matrix.dot(x_in)
+        numpy.testing.assert_allclose(l.dot(dx_in), numpy.ones(len(x_out)))
+
+
+for n in range(2, 5):
+    x_left, x_right = 0, 4
+    plot_res = 30
+    test_gll(n, x_left, x_right)
+    p, w = speclib.gll(n, x_left, x_right)
+    test_lagrange_derivative_matrix_gll(n, x_left, x_right, p)
+    x_plot = numpy.linspace(x_left, x_right, plot_res)
+    test_lagrange_interpolating_matrix(p, x_plot)
+
 
 def test_mesh1d():    # Testing the mesh generation (plotting is not tested here)
     macro_grid, orders = numpy.array((0.0, 1.0, 2.0, 3.0)), numpy.array((3, 4, 2))
