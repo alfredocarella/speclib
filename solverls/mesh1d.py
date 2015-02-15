@@ -38,6 +38,21 @@ class Mesh1d(object):
     print("myMesh1d.Dx[0].dot(myMesh1d.quadPoints[0]) = \n%r\" % myMesh1d.Dx[0].dot(myMesh1d.quadPoints[0]))
     """
 
+    def create_gm(self):
+        gm = []
+        node_counter = 0
+        for el_ in range(self.number_of_elements):
+            element_size = self.number_of_variables * (self.element_orders[el_] + 1)
+            gm.append(numpy.zeros(element_size, dtype=numpy.int))
+            for var_ in range(self.number_of_variables):
+                start_position = var_ * (self.element_orders[el_] + 1)
+                end_position = start_position + self.element_orders[el_]
+                start_number = var_ * self.dof_1v + node_counter
+                end_number = start_number + self.element_orders[el_]
+                gm[el_][start_position: end_position + 1] = numpy.arange(start_number, end_number + 1)
+            node_counter += self.element_orders[el_]
+        return gm
+
     def __init__(self, macro_grid, element_orders, variable_names='f'):
         self.macro_nodes = macro_grid
         self.element_orders = numpy.atleast_1d(element_orders)
@@ -48,26 +63,13 @@ class Mesh1d(object):
         self.dof_1v = numpy.sum(self.element_orders) + 1
         self.dof_nv = self.dof_1v * self.number_of_variables
 
-        self.gm = []
-        self.gm_1v = []
-        node_counter = 0
-        for el_ in range(self.number_of_elements):
-            element_size = self.number_of_variables * (self.element_orders[el_] + 1)
-            self.gm.append(numpy.zeros(element_size, dtype=numpy.int))
-            for var_ in range(self.number_of_variables):
-                start_position = var_ * (self.element_orders[el_] + 1)
-                end_position = start_position + self.element_orders[el_]
-                start_number = var_ * self.dof_1v + node_counter
-                end_number = start_number + self.element_orders[el_]
-                self.gm[el_][start_position: end_position + 1] = numpy.arange(start_number, end_number + 1)
-            node_counter += self.element_orders[el_]
-            self.gm_1v.append(self.gm[el_][0: self.element_orders[el_] + 1])
+        self.gm = self.create_gm()
 
         self.quadrature_weights = []
         self.quadrature_points = []
         self.jac = []
         self.dx = []
-        self.x = numpy.zeros(self.dof_1v)
+        self.x = numpy.zeros(self.dof_nv)
         self.long_quadrature_weights = []
         self.pos = []
         for el_ in range(self.number_of_elements):
@@ -82,12 +84,10 @@ class Mesh1d(object):
             self.long_quadrature_weights.append(long_qw)
             self.pos.append({})
             for var_ in range(self.number_of_variables):
-                first_node_in_element = var_ * len(self.gm_1v[el_])
-                last_node_in_element = first_node_in_element + len(self.gm_1v[el_])
+                first_node_in_element = var_ * len(self.gm[el_]) / self.number_of_variables
+                last_node_in_element = first_node_in_element + len(self.gm[el_]) / self.number_of_variables
                 self.pos[el_][self.list_of_variables[var_]] = numpy.arange(first_node_in_element, last_node_in_element)
-            self.x[self.gm_1v[el_]] = qx
-
-        self.x = numpy.tile(self.x, self.number_of_variables)
+            self.x[self.gm[el_]] = numpy.tile(qx, self.number_of_variables)
 
     def plot_mesh(self):
         # Plot nodes and line
