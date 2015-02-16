@@ -131,7 +131,7 @@ class LSProblem(object):
     def solve_linear(self):
         self.set_operators()
         self.set_boundary_conditions()
-        self.f, cg_iterations = conj_grad_elem(self.k_el, self.g_el, self.mesh.gm, self.mesh.dof_nv)
+        self.f, cg_iterations = conj_grad_elem(self.k_el, self.g_el, self.mesh.gm, self.mesh.dof)
 
     def solve_nonlinear(self):
         self.f = self.mesh.x    # or even --> numpy.ones(len(self.mesh.x))
