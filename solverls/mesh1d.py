@@ -39,23 +39,23 @@ class Mesh1d(object):
     """
 
     def __init__(self, macro_grid, element_orders, variable_names='f'):
-        self.macro_nodes = macro_grid
-        self.element_orders = numpy.atleast_1d(element_orders)
-        self.number_of_elements = len(self.element_orders)
-        self.list_of_variables = []
-        self.list_of_variables.extend(variable_names)
-        self.number_of_variables = len(self.list_of_variables)
-        self.dof = (numpy.sum(self.element_orders) + 1) * self.number_of_variables
+        self.macro_nodes = macro_grid  # mesh attribute
+        self.element_orders = numpy.atleast_1d(element_orders)  # mesh attribute
+        self.number_of_elements = len(self.element_orders)  # mesh attribute
+        self.list_of_variables = []  # mesh attribute
+        self.list_of_variables.extend(variable_names)  # mesh attribute
+        self.number_of_variables = len(self.list_of_variables)  # mesh attribute
 
-        self.gm = self.create_gm()
+        self.dof = (numpy.sum(self.element_orders) + 1) * self.number_of_variables  # mesh attribute
+        self.gm = self.create_gm()  # mesh attribute
 
-        self.quadrature_weights = []
-        self.quadrature_points = []
-        self.jac = []
-        self.dx = []
-        self.x = numpy.zeros(self.dof)
-        self.long_quadrature_weights = []
-        self.pos = []
+        self.quadrature_weights = []  # element attribute
+        self.quadrature_points = []  # element attribute
+        self.jac = []  # element attribute
+        self.dx = []  # element attribute
+        self.x = numpy.zeros(self.dof)  # element attribute
+        self.long_quadrature_weights = []  # element attribute
+        self.pos = []  # element attribute
         for el_ in range(self.number_of_elements):
             lower_element_boundary = self.macro_nodes[el_]
             upper_element_boundary = self.macro_nodes[el_ + 1]
@@ -76,15 +76,15 @@ class Mesh1d(object):
     def create_gm(self):
         gm = []
         node_counter = 0
-        for el_ in range(self.number_of_elements):
+        for el_ in range(len(self.element_orders)):
             element_size = self.number_of_variables * (self.element_orders[el_] + 1)
             gm.append(numpy.zeros(element_size, dtype=numpy.int))
             for var_ in range(self.number_of_variables):
                 start_position = var_ * (self.element_orders[el_] + 1)
-                end_position = start_position + self.element_orders[el_]
+                end_position = start_position + self.element_orders[el_] + 1
                 start_number = var_ * self.dof // self.number_of_variables + node_counter
-                end_number = start_number + self.element_orders[el_]
-                gm[el_][start_position: end_position + 1] = numpy.arange(start_number, end_number + 1)
+                end_number = start_number + self.element_orders[el_] + 1
+                gm[el_][start_position: end_position] = numpy.arange(start_number, end_number)
             node_counter += self.element_orders[el_]
         return gm
 
