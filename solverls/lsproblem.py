@@ -30,7 +30,7 @@ class LSProblem(object):
 
         residual = 0.0
         for el_ in list_of_elements:
-            w = self.mesh.long_quadrature_weights[el_]
+            w = self.mesh.elem[el_].long_quadrature_weights
             gm = self.mesh.gm[el_]
             op_g = self.op_g[el_]
             op_l = self.op_l[el_]
@@ -58,7 +58,7 @@ class LSProblem(object):
     def set_operators(self, list_of_elements=None):
 
         if list_of_elements is None:
-            list_of_elements = range(self.mesh.number_of_elements)
+            list_of_elements = range(len(self.mesh.elem))
         else:
             list_of_elements = list(list_of_elements)
 
@@ -74,13 +74,13 @@ class LSProblem(object):
             for varRow_ in self.mesh.variables:
                 for varCol_ in self.mesh.variables:
                     if (varRow_+'.'+varCol_) in opl_dict:
-                        self.op_l[el_][numpy.ix_(self.mesh.pos[elem][varRow_], self.mesh.pos[elem][varCol_])] += \
+                        self.op_l[el_][numpy.ix_(self.mesh.elem[elem].pos[varRow_], self.mesh.elem[elem].pos[varCol_])] += \
                             opl_dict[varRow_+'.'+varCol_]
                 if varRow_ in opg_dict:
-                    self.op_g[el_][self.mesh.pos[elem][varRow_]] += opg_dict[varRow_]
+                    self.op_g[el_][self.mesh.elem[elem].pos[varRow_]] += opg_dict[varRow_]
 
             # Generate problem sub-matrices
-            lw_matrix = self.op_l[el_].T.dot(numpy.diag(self.mesh.long_quadrature_weights[elem]))
+            lw_matrix = self.op_l[el_].T.dot(numpy.diag(self.mesh.elem[elem].long_quadrature_weights))
             self.k_el.append(lw_matrix.dot(self.op_l[el_]))
             self.g_el.append(lw_matrix.dot(self.op_g[el_]))
 
@@ -127,8 +127,8 @@ class LSProblem(object):
             y_in = numpy.zeros([])
             x_out = numpy.zeros([])
             y_out = numpy.zeros([])
-            for elem in range(self.mesh.number_of_elements):
-                variable_indices = self.mesh.gm[elem][self.mesh.pos[elem][variable_name]]
+            for elem in range(len(self.mesh.elem)):
+                variable_indices = self.mesh.gm[elem][self.mesh.elem[elem].pos[variable_name]]
                 x_in_local = self.mesh.x[variable_indices]
                 y_in_local = self.f[variable_indices]
                 x_out_local = numpy.linspace(self.mesh.macro_grid[elem], self.mesh.macro_grid[elem+1], 10)

@@ -15,24 +15,24 @@ def test_mesh1d():    # Testing the mesh generation (plotting is not tested here
     numpy.testing.assert_array_equal(my_mesh1d.element_orders, orders)
     numpy.testing.assert_allclose(my_mesh1d.macro_grid, macro_grid)
     assert_equal(my_mesh1d.variables, list_of_variables)
-    assert_equal(my_mesh1d.number_of_elements, len(my_mesh1d.element_orders))
+    assert_equal(len(my_mesh1d.elem), len(my_mesh1d.element_orders))
     assert_equal(my_mesh1d.dof, len(my_mesh1d.variables) * (sum(my_mesh1d.element_orders)+1))
-    assert_equal(len(my_mesh1d.gm), my_mesh1d.number_of_elements)
+    assert_equal(len(my_mesh1d.gm), len(my_mesh1d.elem))
 
     integral_test_value = 0
-    for el in range(my_mesh1d.number_of_elements):
-        integral_test_value += my_mesh1d.quadrature_points[el].dot(my_mesh1d.quadrature_weights[el])
+    for el in range(len(my_mesh1d.elem)):
+        integral_test_value += my_mesh1d.elem[el].quadrature_points.dot(my_mesh1d.elem[el].quadrature_weights)
         assert_almost_equal(
-            my_mesh1d.jac[el], (my_mesh1d.x[my_mesh1d.gm[el][-1]]-my_mesh1d.x[my_mesh1d.gm[el][0]])/2.0)
-        numpy.testing.assert_array_equal(my_mesh1d.gm[el][:my_mesh1d.element_orders[el]+1], my_mesh1d.gm[el][range(int(len(my_mesh1d.gm[el])/len(my_mesh1d.variables)))])
-        numpy.testing.assert_array_equal(my_mesh1d.quadrature_points[el], my_mesh1d.x[my_mesh1d.gm[el][range(int(len(my_mesh1d.gm[el])/len(my_mesh1d.variables)))]])
+            my_mesh1d.elem[el].jac, (my_mesh1d.elem[el].x[-1]-my_mesh1d.elem[el].x[0]) / 2.0)
+        numpy.testing.assert_array_equal(my_mesh1d.gm[el][:my_mesh1d.element_orders[el]+1], my_mesh1d.gm[el][0:(my_mesh1d.elem[el].order + 1)])
+        numpy.testing.assert_array_equal(my_mesh1d.elem[el].quadrature_points, my_mesh1d.x[my_mesh1d.gm[el][0:(my_mesh1d.elem[el].order + 1)]])
         numpy.testing.assert_array_equal(
-            my_mesh1d.dx[el], speclib.lagrange_derivative_matrix_gll(my_mesh1d.element_orders[el]+1)/my_mesh1d.jac[el])
+            my_mesh1d.elem[el].dx, speclib.lagrange_derivative_matrix_gll(my_mesh1d.elem[el].order+1)/my_mesh1d.elem[el].jac)
         numpy.testing.assert_array_equal(
-            my_mesh1d.long_quadrature_weights[el],
-            numpy.tile(my_mesh1d.quadrature_weights[el], len(my_mesh1d.variables)))
+            my_mesh1d.elem[el].long_quadrature_weights,
+            numpy.tile(my_mesh1d.elem[el].quadrature_weights, len(my_mesh1d.variables)))
         pos_var_test_value = []
         for var in my_mesh1d.variables:
-            pos_var_test_value = numpy.append(pos_var_test_value, my_mesh1d.pos[el][var])
+            pos_var_test_value = numpy.append(pos_var_test_value, my_mesh1d.elem[el].pos[var])
         numpy.testing.assert_array_equal(pos_var_test_value, range(len(my_mesh1d.gm[el])))
     assert_almost_equal(integral_test_value, (my_mesh1d.macro_grid[-1]-my_mesh1d.macro_grid[0])**2 / 2)

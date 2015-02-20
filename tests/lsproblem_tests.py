@@ -63,7 +63,7 @@ class TestLSProblem1el1v(LSProblem):
     def set_equations(self, el):
         operator_size = len(self.mesh.gm[el]) / len(self.mesh.variables)
 
-        op_l = {'f.f': self.mesh.dx[el].dot(self.mesh.dx[el])}
+        op_l = {'f.f': self.mesh.elem[el].dx.dot(self.mesh.elem[el].dx)}
         op_g = {'f': -1.0 * numpy.ones(operator_size)}
 
         return op_l, op_g
@@ -86,10 +86,10 @@ class TestLSProblemNelNv(LSProblem):
 
     def set_equations(self, el):
         operator_size = len(self.mesh.gm[el]) / len(self.mesh.variables)
-        op_l = {'f.f': self.mesh.dx[el],
+        op_l = {'f.f': self.mesh.elem[el].dx,
                 'f.g': -1.0 * numpy.identity(operator_size),
                 'g.f': numpy.zeros((operator_size, operator_size)),
-                'g.g': self.mesh.dx[el]}
+                'g.g': self.mesh.elem[el].dx}
 
         op_g = {'f': numpy.zeros(operator_size),
                 'g': -1.0 * numpy.ones(operator_size)}

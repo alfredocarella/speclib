@@ -15,74 +15,22 @@ class Mesh1d(object):
     """
 
     def __init__(self, macro_grid, element_orders, variable_names=('f',)):
-        self.macro_grid = macro_grid  # mesh attribute
-        self.element_orders = numpy.atleast_1d(element_orders)  # mesh attribute
-        self.variables = variable_names  # mesh attribute
+        # Mesh attributes
+        self.macro_grid = macro_grid
+        self.element_orders = numpy.atleast_1d(element_orders)
+        self.variables = variable_names
+        self.dof = (numpy.sum(self.element_orders) + 1) * len(self.variables)
 
-        self.number_of_elements = len(self.macro_grid) - 1  # redundant mesh attribute => len(elem)
-
-        self.new_mesh_init()
-        self.old_mesh_init()
-
-    def new_mesh_init(self):
+        # List of elements
         self.elem = []
-        for el in range(self.number_of_elements):
+        for el in range(len(self.macro_grid) - 1):
             self.elem.append(Element1D(self.macro_grid[el:el+2], self.element_orders[el], self.variables))
 
-
-        # class Element1D():
-        #     """Spectral (high order) 1D element. One of the elementary blocks that compose a mesh (and a mesh object)"""
-        #
-        #     def __init__(self, boundaries, order, variables):
-        #         # Numbering
-        #         self.variables = variables
-        #         self.order = order
-        #         self.pos = self.create_local_variable_indices()
-        #         # Geometry
-        #         self.boundaries = boundaries
-        #         self.quadrature_points, self.quadrature_weights = gll(self.order + 1, self.boundaries[0], self.boundaries[1])
-        #         self.long_quadrature_weights = numpy.tile(self.quadrature_weights, len(variables))
-        #         self.x = numpy.tile(self.quadrature_points, len(variables))
-        #         # Differentiation
-        #         self.jac = (self.boundaries[1] - self.boundaries[0]) / 2.0
-        #         self.dx = lagrange_derivative_matrix_gll(self.order + 1) / self.jac
-        #
-        #     def create_local_variable_indices(self):
-        #         pos = {}
-        #         for var_ in range(len(self.variables)):
-        #             first_node_in_variable = var_ * (self.order + 1)
-        #             last_node_in_variable = first_node_in_variable + (self.order + 1)
-        #             pos[self.variables[var_]] = numpy.arange(first_node_in_variable, last_node_in_variable)
-        #         return pos
-
-    def old_mesh_init(self):
-        self.quadrature_weights = []  # element attribute
-        self.quadrature_points = []  # element attribute
-        self.jac = []  # element attribute
-        self.dx = []  # element attribute
-        self.long_quadrature_weights = []  # element attribute
-        self.pos = []  # element attribute
-        for el_ in range(self.number_of_elements):
-            lower_element_boundary = self.macro_grid[el_]
-            upper_element_boundary = self.macro_grid[el_ + 1]
-            self.jac.append((upper_element_boundary - lower_element_boundary) / 2.0)
-            self.dx.append(lagrange_derivative_matrix_gll(self.element_orders[el_] + 1) / self.jac[el_])
-            qx, qw = gll(self.element_orders[el_] + 1, lower_element_boundary, upper_element_boundary)
-            self.quadrature_points.append(qx)  # x coordinate (quad points)
-            self.quadrature_weights.append(qw)  # quadrature weights
-            long_qw = numpy.tile(qw, len(self.variables))
-            self.long_quadrature_weights.append(long_qw)
-            self.pos.append({})
-            for var_ in range(len(self.variables)):
-                first_node_in_element = var_ * (self.element_orders[el_] + 1)
-                last_node_in_element = first_node_in_element + self.element_orders[el_] + 1
-                self.pos[el_][self.variables[var_]] = numpy.arange(first_node_in_element, last_node_in_element)
-        self.dof = (numpy.sum(self.element_orders) + 1) * len(self.variables)  # mesh attribute
+        # Gathering matrix (1:CREATE GM FROM ELEMENTS - 2:EVALUATE DELETING Mesh1d.x)
         self.gm = self.create_gm()  # mesh attribute
         self.x = numpy.zeros(self.dof)  # mesh attribute
-        for el_ in range(self.number_of_elements):
-            self.x[self.gm[el_]] = numpy.tile(self.quadrature_points[el_], len(self.variables))
-
+        for el_ in range(len(self.elem)):
+            self.x[self.gm[el_]] = numpy.tile(self.elem[el_].quadrature_points, len(self.variables))
 
     def create_gm(self):
         gm = []
@@ -120,12 +68,12 @@ class Mesh1d(object):
                                    xytext=(first_element_center, 0.3), arrowprops=dict(facecolor='black', shrink=0.05))
         matplotlib.pyplot.annotate('node number', xy=(micro_grid[1], -0.12), xytext=(micro_grid[1], -0.3),
                                    arrowprops=dict(facecolor='black', shrink=0.05))
-        mesh_text = '''
-        Degrees of freedom per variable: {0:d}
-        Total degrees of freedom: {1:d}
-        Number of elements: {2:d}
-        Variables: {3:d} {4:s}
-        '''.format(self.dof // len(self.variables), self.dof, self.number_of_elements, len(self.variables), self.variables)
+        mesh_text = """
+        Degrees of freedom per variable: {1}
+        Total degrees of freedom: {1}
+        Number of elements: {2}
+        Variables: {3} {4}
+        """.format(self.dof // len(self.variables), self.dof, len(self.elem), len(self.variables), self.variables)
         matplotlib.pyplot.text((macro_grid[0] + macro_grid[-1]) / 4.0, -0.9, mesh_text)
         matplotlib.pyplot.title('1-D mesh information')
         matplotlib.pyplot.xlabel('Independent variable coordinate')
@@ -135,7 +83,7 @@ class Mesh1d(object):
 
 if __name__ == '__main__':
     macro_coordinates, orders = numpy.array((0.0, 1.0, 2.0, 3.0)), numpy.array((3, 4, 2))
-    list_of_variables = ['T', 'pres', 'quality']
+    list_of_variables = ['Temperature', 'Pressure', 'Quality']
     my_mesh1d = Mesh1d(macro_coordinates, orders, list_of_variables)
 
     print('Test inputs:')
@@ -143,10 +91,9 @@ if __name__ == '__main__':
     print('orders = %s' % my_mesh1d.element_orders)
     print('list_of_variables = %s' % my_mesh1d.variables)
     print('')
+    print('Test outputs:')
+    print("my_mesh1d.elem[0].dx = \n%r" % my_mesh1d.elem[0].dx)
+    print("my_mesh1d.elem[0].quadrature_points = %r" % my_mesh1d.elem[0].quadrature_points)
+    print("my_mesh1d.elem[0].dx.dot(my_mesh1d.elem[0].quadPoints) = \n%r" % my_mesh1d.elem[0].dx.dot(my_mesh1d.elem[0].quadrature_points))
+    # my_mesh1d.plot_mesh()
 
-    # Example:
-    # macroGrid, P, NV = numpy.array((0.0,1.0,2.0,3.0)), numpy.array((3,4,2)), 2
-    # myMesh1d = Mesh1d(macroGrid, P, NV)
-    # print("myMesh1d.Dx[0] = \n%r" % myMesh1d.Dx[0])
-    # print("myMesh1d.x[myMesh1d.gm1v[0]] = %r" % myMesh1d.x[myMesh1d.gm_1v[0]])
-    # print("myMesh1d.Dx[0].dot(myMesh1d.quadPoints[0]) = \n%r\" % myMesh1d.Dx[0].dot(myMesh1d.quadPoints[0]))
