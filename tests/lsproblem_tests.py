@@ -37,7 +37,7 @@ def test_problem_nel_nv():
     my_mesh1d = Mesh1d(macro_grid, orders, list_of_variables)
     numpy.testing.assert_array_equal(my_mesh1d.macro_grid, macro_grid)
     numpy.testing.assert_array_equal(my_mesh1d.element_orders, orders)
-    assert_equal(my_mesh1d.list_of_variables, list_of_variables)
+    assert_equal(my_mesh1d.variables, list_of_variables)
 
     my_problem = TestLSProblemNelNv(my_mesh1d)
     my_problem.residual = my_problem.compute_residual()
@@ -61,7 +61,7 @@ class TestLSProblem1el1v(LSProblem):
         self.solve_linear()
 
     def set_equations(self, el):
-        operator_size = len(self.mesh.gm[el]) / self.mesh.number_of_variables
+        operator_size = len(self.mesh.gm[el]) / len(self.mesh.variables)
 
         op_l = {'f.f': self.mesh.dx[el].dot(self.mesh.dx[el])}
         op_g = {'f': -1.0 * numpy.ones(operator_size)}
@@ -85,7 +85,7 @@ class TestLSProblemNelNv(LSProblem):
         self.solve_linear()
 
     def set_equations(self, el):
-        operator_size = len(self.mesh.gm[el]) / self.mesh.number_of_variables
+        operator_size = len(self.mesh.gm[el]) / len(self.mesh.variables)
         op_l = {'f.f': self.mesh.dx[el],
                 'f.g': -1.0 * numpy.identity(operator_size),
                 'g.f': numpy.zeros((operator_size, operator_size)),

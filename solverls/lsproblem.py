@@ -71,8 +71,8 @@ class LSProblem(object):
 
             opl_dict, opg_dict = self.set_equations(elem)
 
-            for varRow_ in self.mesh.list_of_variables:
-                for varCol_ in self.mesh.list_of_variables:
+            for varRow_ in self.mesh.variables:
+                for varCol_ in self.mesh.variables:
                     if (varRow_+'.'+varCol_) in opl_dict:
                         self.op_l[el_][numpy.ix_(self.mesh.pos[elem][varRow_], self.mesh.pos[elem][varCol_])] += \
                             opl_dict[varRow_+'.'+varCol_]
@@ -122,7 +122,7 @@ class LSProblem(object):
 
         fig = matplotlib.pyplot.figure()
         for variable_name in list_of_variables:
-            variable_number = self.mesh.list_of_variables.index(variable_name)
+            variable_number = self.mesh.variables.index(variable_name)
             x_in = numpy.zeros([])
             y_in = numpy.zeros([])
             x_out = numpy.zeros([])
