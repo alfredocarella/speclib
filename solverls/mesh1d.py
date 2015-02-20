@@ -1,6 +1,7 @@
 import matplotlib.pyplot
 import numpy
 from solverls.speclib import lagrange_derivative_matrix_gll, gll
+from solverls.element1d import Element1D
 
 __author__ = 'Alfredo Carella'
 
@@ -11,44 +12,23 @@ class Mesh1d(object):
     macroGrid = vector with the position of element boundary nodes
     P = vector with the order for each element (int)
     NV = number of variables (int)
-
-    The attributes of class Mesh1d()are:
-
-    Mesh1d.macroNodes
-    Mesh1d.elementOrders
-    Mesh1d.numberOfElements
-    Mesh1d.listOfVariables
-    Mesh1d.numberOfVariables
-    Mesh1d.dof1v
-    Mesh1d.dof
-    Mesh1d.gm
-    Mesh1d.gm_1v
-    Mesh1d.quadWeights
-    Mesh1d.quadPoints
-    Mesh1d.Jx
-    Mesh1d.Dx
-    Mesh1d.x
-    Mesh1d.longQuadWeights
-
-    Example:
-    macroGrid, P, NV = numpy.array((0.0,1.0,2.0,3.0)), numpy.array((3,4,2)), 2
-    myMesh1d = Mesh1d(macroGrid, P, NV)
-    print("myMesh1d.Dx[0] = \n%r" % myMesh1d.Dx[0])
-    print("myMesh1d.x[myMesh1d.gm1v[0]] = %r" % myMesh1d.x[myMesh1d.gm_1v[0]])
-    print("myMesh1d.Dx[0].dot(myMesh1d.quadPoints[0]) = \n%r\" % myMesh1d.Dx[0].dot(myMesh1d.quadPoints[0]))
     """
 
-    def __init__(self, macro_grid, element_orders, variable_names='f'):
+    def __init__(self, macro_grid, element_orders, variable_names=['f']):
         self.macro_nodes = macro_grid  # mesh attribute
         self.element_orders = numpy.atleast_1d(element_orders)  # mesh attribute
         self.number_of_elements = len(self.element_orders)  # mesh attribute
         self.list_of_variables = []  # mesh attribute
-        self.list_of_variables.extend(variable_names)  # mesh attribute
+        self.list_of_variables = variable_names  # mesh attribute
         self.number_of_variables = len(self.list_of_variables)  # mesh attribute
 
         self.dof = (numpy.sum(self.element_orders) + 1) * self.number_of_variables  # mesh attribute
         self.gm = self.create_gm()  # mesh attribute
 
+        self.elem = []
+        self.x = []
+        # for el_ in range(self.number_of_elements):
+        #     self.elem.append(Element1D(self.macro_nodes[el_:el_+2], self.gm[el_], self.list_of_variables))
         self.quadrature_weights = []  # element attribute
         self.quadrature_points = []  # element attribute
         self.jac = []  # element attribute
@@ -120,3 +100,22 @@ class Mesh1d(object):
         matplotlib.pyplot.xlabel('Independent variable coordinate')
         matplotlib.pyplot.axis([macro_grid[0], macro_grid[-1], -1, 1])
         matplotlib.pyplot.show()
+
+
+if __name__ == '__main__':
+    macro_grid, orders = numpy.array((0.0, 1.0, 2.0, 3.0)), numpy.array((3, 4, 2))
+    list_of_variables = ['T', 'pres', 'quality']
+    my_mesh1d = Mesh1d(macro_grid, orders, list_of_variables)
+
+    print('Test inputs:')
+    print('macro_grid = %s' % my_mesh1d.macro_nodes)
+    print('orders = %s' % my_mesh1d.element_orders)
+    print('list_of_variables = %s' % my_mesh1d.list_of_variables)
+    print('')
+
+    # Example:
+    # macroGrid, P, NV = numpy.array((0.0,1.0,2.0,3.0)), numpy.array((3,4,2)), 2
+    # myMesh1d = Mesh1d(macroGrid, P, NV)
+    # print("myMesh1d.Dx[0] = \n%r" % myMesh1d.Dx[0])
+    # print("myMesh1d.x[myMesh1d.gm1v[0]] = %r" % myMesh1d.x[myMesh1d.gm_1v[0]])
+    # print("myMesh1d.Dx[0].dot(myMesh1d.quadPoints[0]) = \n%r\" % myMesh1d.Dx[0].dot(myMesh1d.quadPoints[0]))
