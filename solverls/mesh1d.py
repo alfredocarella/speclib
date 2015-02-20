@@ -14,31 +14,23 @@ class Mesh1d(object):
     NV = number of variables (int)
     """
 
-    def __init__(self, macro_grid, element_orders, variable_names=['f']):
-        self.macro_nodes = macro_grid  # mesh attribute
+    def __init__(self, macro_grid, element_orders, variable_names=('f',)):
+        self.macro_grid = macro_grid  # mesh attribute
         self.element_orders = numpy.atleast_1d(element_orders)  # mesh attribute
-        self.number_of_elements = len(self.element_orders)  # mesh attribute
-        self.list_of_variables = []  # mesh attribute
         self.list_of_variables = variable_names  # mesh attribute
-        self.number_of_variables = len(self.list_of_variables)  # mesh attribute
 
-        self.dof = (numpy.sum(self.element_orders) + 1) * self.number_of_variables  # mesh attribute
-        self.gm = self.create_gm()  # mesh attribute
+        self.number_of_elements = len(self.macro_grid) - 1  # mesh attribute (redundant)
+        self.number_of_variables = len(self.list_of_variables)  # mesh attribute (redundant)
 
-        self.elem = []
-        self.x = []
-        # for el_ in range(self.number_of_elements):
-        #     self.elem.append(Element1D(self.macro_nodes[el_:el_+2], self.gm[el_], self.list_of_variables))
         self.quadrature_weights = []  # element attribute
         self.quadrature_points = []  # element attribute
         self.jac = []  # element attribute
         self.dx = []  # element attribute
-        self.x = numpy.zeros(self.dof)  # element attribute
         self.long_quadrature_weights = []  # element attribute
         self.pos = []  # element attribute
         for el_ in range(self.number_of_elements):
-            lower_element_boundary = self.macro_nodes[el_]
-            upper_element_boundary = self.macro_nodes[el_ + 1]
+            lower_element_boundary = self.macro_grid[el_]
+            upper_element_boundary = self.macro_grid[el_ + 1]
             self.jac.append((upper_element_boundary - lower_element_boundary) / 2.0)
             self.dx.append(lagrange_derivative_matrix_gll(self.element_orders[el_] + 1) / self.jac[el_])
             qx, qw = gll(self.element_orders[el_] + 1, lower_element_boundary, upper_element_boundary)
@@ -48,10 +40,16 @@ class Mesh1d(object):
             self.long_quadrature_weights.append(long_qw)
             self.pos.append({})
             for var_ in range(self.number_of_variables):
-                first_node_in_element = var_ * len(self.gm[el_]) // self.number_of_variables
-                last_node_in_element = first_node_in_element + len(self.gm[el_]) // self.number_of_variables
+                first_node_in_element = var_ * (self.element_orders[el_] + 1)
+                last_node_in_element = first_node_in_element + self.element_orders[el_] + 1
                 self.pos[el_][self.list_of_variables[var_]] = numpy.arange(first_node_in_element, last_node_in_element)
-            self.x[self.gm[el_]] = numpy.tile(qx, self.number_of_variables)
+
+        self.dof = (numpy.sum(self.element_orders) + 1) * self.number_of_variables  # mesh attribute
+        self.gm = self.create_gm()  # mesh attribute
+
+        self.x = numpy.zeros(self.dof)  # mesh attribute
+        for el_ in range(self.number_of_elements):
+            self.x[self.gm[el_]] = numpy.tile(self.quadrature_points[el_], self.number_of_variables)
 
     def create_gm(self):
         gm = []
@@ -71,7 +69,7 @@ class Mesh1d(object):
     def plot_mesh(self):
         # Plot nodes and line
         micro_grid = self.x
-        macro_grid = self.macro_nodes
+        macro_grid = self.macro_grid
         matplotlib.pyplot.plot((macro_grid[0], macro_grid[-1]), (0, 0), 'r--', linewidth=2.0)  # Lines
         matplotlib.pyplot.plot(micro_grid, micro_grid * 0, 'ro')  # Nodes (micro)
         matplotlib.pyplot.plot(macro_grid, macro_grid * 0, 'bs', markersize=10)  # Nodes (macro)
@@ -103,12 +101,12 @@ class Mesh1d(object):
 
 
 if __name__ == '__main__':
-    macro_grid, orders = numpy.array((0.0, 1.0, 2.0, 3.0)), numpy.array((3, 4, 2))
+    macro_coordinates, orders = numpy.array((0.0, 1.0, 2.0, 3.0)), numpy.array((3, 4, 2))
     list_of_variables = ['T', 'pres', 'quality']
-    my_mesh1d = Mesh1d(macro_grid, orders, list_of_variables)
+    my_mesh1d = Mesh1d(macro_coordinates, orders, list_of_variables)
 
     print('Test inputs:')
-    print('macro_grid = %s' % my_mesh1d.macro_nodes)
+    print('macro_grid = %s' % my_mesh1d.macro_grid)
     print('orders = %s' % my_mesh1d.element_orders)
     print('list_of_variables = %s' % my_mesh1d.list_of_variables)
     print('')

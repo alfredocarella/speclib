@@ -13,7 +13,7 @@ def test_mesh1d():    # Testing the mesh generation (plotting is not tested here
     my_mesh1d = Mesh1d(macro_grid, orders, list_of_variables)
 
     numpy.testing.assert_array_equal(my_mesh1d.element_orders, orders)
-    numpy.testing.assert_allclose(my_mesh1d.macro_nodes, macro_grid)
+    numpy.testing.assert_allclose(my_mesh1d.macro_grid, macro_grid)
     assert_equal(my_mesh1d.list_of_variables, list_of_variables)
     assert_equal(my_mesh1d.number_of_elements, len(my_mesh1d.element_orders))
     assert_equal(my_mesh1d.number_of_variables, len(my_mesh1d.list_of_variables))
@@ -36,4 +36,4 @@ def test_mesh1d():    # Testing the mesh generation (plotting is not tested here
         for var in my_mesh1d.list_of_variables:
             pos_var_test_value = numpy.append(pos_var_test_value, my_mesh1d.pos[el][var])
         numpy.testing.assert_array_equal(pos_var_test_value, range(len(my_mesh1d.gm[el])))
-    assert_almost_equal(integral_test_value, (my_mesh1d.macro_nodes[-1]-my_mesh1d.macro_nodes[0])**2 / 2)
+    assert_almost_equal(integral_test_value, (my_mesh1d.macro_grid[-1]-my_mesh1d.macro_grid[0])**2 / 2)

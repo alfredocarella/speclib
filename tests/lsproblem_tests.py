@@ -35,7 +35,7 @@ def test_problem_nel_nv():
     """Testing a problem w/ multiple variables and elements"""
     macro_grid, orders, list_of_variables = numpy.array((0.0, 1.0, 2.0)), numpy.array((3, 3)), ['f', 'g']
     my_mesh1d = Mesh1d(macro_grid, orders, list_of_variables)
-    numpy.testing.assert_array_equal(my_mesh1d.macro_nodes, macro_grid)
+    numpy.testing.assert_array_equal(my_mesh1d.macro_grid, macro_grid)
     numpy.testing.assert_array_equal(my_mesh1d.element_orders, orders)
     assert_equal(my_mesh1d.list_of_variables, list_of_variables)
 
