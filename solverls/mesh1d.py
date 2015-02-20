@@ -26,7 +26,7 @@ class Mesh1d(object):
         for el in range(len(self.macro_grid) - 1):
             self.elem.append(Element1D(self.macro_grid[el:el+2], self.element_orders[el], self.variables))
 
-        # Gathering matrix (1:CREATE GM FROM ELEMENTS - 2:EVALUATE DELETING Mesh1d.x)
+        # Gathering matrix (1:CORRECT GM CREATION - 2:EVALUATE DELETING Mesh1d.x)
         self.gm = self.create_gm()  # mesh attribute
         self.x = numpy.zeros(self.dof)  # mesh attribute
         for el_ in range(len(self.elem)):
@@ -35,16 +35,16 @@ class Mesh1d(object):
     def create_gm(self):
         gm = []
         node_counter = 0
-        for el_ in range(len(self.element_orders)):
-            element_size = len(self.variables) * (self.element_orders[el_] + 1)
+        for el in self.elem:
+            element_size = len(self.variables) * (el.order + 1)
             gm.append(numpy.zeros(element_size, dtype=numpy.int))
             for var_ in range(len(self.variables)):
-                start_position = var_ * (self.element_orders[el_] + 1)
-                end_position = start_position + self.element_orders[el_] + 1
+                start_position = var_ * (el.order + 1)
+                end_position = start_position + el.order + 1
                 start_number = var_ * self.dof // len(self.variables) + node_counter
-                end_number = start_number + self.element_orders[el_] + 1
-                gm[el_][start_position: end_position] = numpy.arange(start_number, end_number)
-            node_counter += self.element_orders[el_]
+                end_number = start_number + el.order + 1
+                gm[-1][start_position: end_position] = numpy.arange(start_number, end_number)
+            node_counter += el.order
         return gm
 
     def plot_mesh(self):
