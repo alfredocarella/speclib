@@ -138,7 +138,7 @@ class LSProblem(object):
                 x_out = numpy.append(x_out, x_out_local)
                 y_out = numpy.append(y_out, y_out_local)
 
-            matplotlib.pyplot.subplot(100*len(list_of_variables) + 10 + variable_number)
+            matplotlib.pyplot.subplot(100*len(list_of_variables) + 10 + variable_number+1)
             matplotlib.pyplot.plot(x_out, y_out, '--', linewidth=2.0)
             matplotlib.pyplot.plot(x_in, y_in, '.', markersize=8.0)
             matplotlib.pyplot.ylabel(variable_name)
@@ -154,6 +154,6 @@ class LSProblem(object):
 
         return fig
 
-    # TODO: Should not be that difficult to implement
+    # TODO: After the other features are working
     def solve_nonlinear_slab(self):
         pass
