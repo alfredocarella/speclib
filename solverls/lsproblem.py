@@ -30,7 +30,7 @@ class LSProblem(object):
 
         residual = 0.0
         for el_ in list_of_elements:
-            w = self.mesh.elem[el_].long_quadrature_weights
+            w = self.mesh.elem[el_].w_nv
             gm = self.mesh.gm[el_]
             op_g = self.op_g[el_]
             op_l = self.op_l[el_]
@@ -80,7 +80,7 @@ class LSProblem(object):
                     self.op_g[el_][self.mesh.elem[elem].pos[varRow_]] += opg_dict[varRow_]
 
             # Generate problem sub-matrices
-            lw_matrix = self.op_l[el_].T.dot(numpy.diag(self.mesh.elem[elem].long_quadrature_weights))
+            lw_matrix = self.op_l[el_].T.dot(numpy.diag(self.mesh.elem[elem].x_nv))
             self.k_el.append(lw_matrix.dot(self.op_l[el_]))
             self.g_el.append(lw_matrix.dot(self.op_g[el_]))
 
@@ -129,7 +129,7 @@ class LSProblem(object):
             y_out = numpy.zeros([])
             for elem in range(len(self.mesh.elem)):
                 variable_indices = self.mesh.gm[elem][self.mesh.elem[elem].pos[variable_name]]
-                x_in_local = self.mesh.x[variable_indices]
+                x_in_local = self.mesh.elem[elem].x_1v
                 y_in_local = self.f[variable_indices]
                 x_out_local = numpy.linspace(self.mesh.macro_grid[elem], self.mesh.macro_grid[elem+1], 10)
                 y_out_local = lagrange_interpolating_matrix(x_in_local, x_out_local).dot(y_in_local)

@@ -21,16 +21,16 @@ def test_mesh1d():    # Testing the mesh generation (plotting is not tested here
 
     integral_test_value = 0
     for el in range(len(my_mesh1d.elem)):
-        integral_test_value += my_mesh1d.elem[el].quadrature_points.dot(my_mesh1d.elem[el].quadrature_weights)
+        integral_test_value += my_mesh1d.elem[el].x_1v.dot(my_mesh1d.elem[el].w_1v)
         assert_almost_equal(
-            my_mesh1d.elem[el].jac, (my_mesh1d.elem[el].x[-1]-my_mesh1d.elem[el].x[0]) / 2.0)
+            my_mesh1d.elem[el].jac, (my_mesh1d.elem[el].x_1v[-1]-my_mesh1d.elem[el].x_1v[0]) / 2.0)
         numpy.testing.assert_array_equal(my_mesh1d.gm[el][:my_mesh1d.element_orders[el]+1], my_mesh1d.gm[el][0:(my_mesh1d.elem[el].order + 1)])
-        numpy.testing.assert_array_equal(my_mesh1d.elem[el].quadrature_points, my_mesh1d.x[my_mesh1d.gm[el][0:(my_mesh1d.elem[el].order + 1)]])
+        numpy.testing.assert_array_equal(my_mesh1d.elem[el].x_1v, my_mesh1d.elem[el].x_1v)
         numpy.testing.assert_array_equal(
             my_mesh1d.elem[el].dx, speclib.lagrange_derivative_matrix_gll(my_mesh1d.elem[el].order+1)/my_mesh1d.elem[el].jac)
         numpy.testing.assert_array_equal(
-            my_mesh1d.elem[el].long_quadrature_weights,
-            numpy.tile(my_mesh1d.elem[el].quadrature_weights, len(my_mesh1d.variables)))
+            my_mesh1d.elem[el].w_nv,
+            numpy.tile(my_mesh1d.elem[el].w_1v, len(my_mesh1d.variables)))
         pos_var_test_value = []
         for var in my_mesh1d.variables:
             pos_var_test_value = numpy.append(pos_var_test_value, my_mesh1d.elem[el].pos[var])
