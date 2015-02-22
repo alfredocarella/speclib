@@ -1,7 +1,7 @@
 from nose.tools import assert_equal, assert_almost_equal
 import numpy
 from solverls import speclib
-from solverls.mesh1d import Mesh1d
+from solverls.mesh1d import Mesh1D
 
 __author__ = 'alfredoc'
 
@@ -10,7 +10,7 @@ def test_mesh1d():    # Testing the mesh generation (plotting is not tested here
     macro_grid, orders = numpy.array((0.0, 1.0, 2.0, 3.0)), numpy.array((3, 4, 2))
     list_of_variables = ['T', 'pres', 'quality']
 
-    my_mesh1d = Mesh1d(macro_grid, orders, list_of_variables)
+    my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
 
     numpy.testing.assert_array_equal(my_mesh1d.element_orders, orders)
     numpy.testing.assert_allclose(my_mesh1d.macro_grid, macro_grid)

@@ -1,7 +1,7 @@
 from nose.tools import assert_almost_equal, assert_equal
 import numpy
 from solverls.lsproblem import LSProblem
-from solverls.mesh1d import Mesh1d
+from solverls.mesh1d import Mesh1D
 
 __author__ = 'alfredoc'
 
@@ -10,7 +10,7 @@ __author__ = 'alfredoc'
 def test_problem_1el_1v():
     """Testing results for a simple problem (1 var, 1 elem)"""
     macro_grid, orders, list_of_variables = numpy.array((0.0, 2.0)), numpy.array(4), ['f']
-    my_mesh1d = Mesh1d(macro_grid, orders, list_of_variables)
+    my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
 
     my_problem = TestLSProblem1el1v(my_mesh1d)
 
@@ -34,7 +34,7 @@ def test_problem_1el_1v():
 def test_problem_nel_nv():
     """Testing a problem w/ multiple variables and elements"""
     macro_grid, orders, list_of_variables = numpy.array((0.0, 1.0, 2.0)), numpy.array((3, 3)), ['f', 'g']
-    my_mesh1d = Mesh1d(macro_grid, orders, list_of_variables)
+    my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
     numpy.testing.assert_array_equal(my_mesh1d.macro_grid, macro_grid)
     numpy.testing.assert_array_equal(my_mesh1d.element_orders, orders)
     assert_equal(my_mesh1d.variables, list_of_variables)
@@ -112,7 +112,7 @@ class TestLSProblemNelNv(LSProblem):
 #     macro_grid, orders, list_of_variables = numpy.array((0.0, 1.0, 2.0)), numpy.array((3, 3)), ['f']
 #     print("macro_grid = %r - orders = %r - list_of_variables = %r" % (macro_grid, orders, list_of_variables))
 #
-#     my_mesh1d = Mesh1d(macro_grid, orders, list_of_variables)
+#     my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
 #     my_problem = TestLSProblemNonLinear(my_mesh1d)
 #     my_problem.plot_solution(['f'], 'testingProblemNonLinear.pdf')
 #
@@ -128,7 +128,7 @@ class TestLSProblemNelNv(LSProblem):
 #     list_of_variables = ['v0', 'x0']
 #     # print("macro_grid = %r - orders = %r - list_of_variables = %r" % (macro_grid, orders, list_of_variables))
 #
-#     my_mesh1d = Mesh1d(macro_grid, orders, list_of_variables)
+#     my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
 #     my_problem = TorsionalProblemTest(my_mesh1d)
 #     my_problem.plot_solution()  # filename='testingProblemTorsional1v.pdf')
 #
@@ -170,7 +170,7 @@ class TestLSProblemNelNv(LSProblem):
 #         list_of_variables.append('x%d' % variable_number)
 #     print(list_of_variables)
 #
-#     my_mesh1d = Mesh1d(macro_grid, orders, list_of_variables)
+#     my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
 #     my_problem = TorsionalProblemTestNv(my_mesh1d)
 #     my_problem.solve_linear_slab()
 #     my_problem.plot_solution()  # filename='testingProblemTorsionalNv.pdf')

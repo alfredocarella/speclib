@@ -5,7 +5,7 @@ from solverls.element1d import Element1D
 __author__ = 'Alfredo Carella'
 
 
-class Mesh1d(object):
+class Mesh1D(object):
     """
     This class represents a 1-dimensional high-order Finite Element mesh.
     macroGrid = vector with the position of element boundary nodes
@@ -69,7 +69,7 @@ if __name__ == '__main__':
     def minimum_working_example():
         macro_coordinates, orders = numpy.array((0.0, 1.0, 2.0, 3.0)), numpy.array((3, 4, 2))
         list_of_variables = ['Temperature', 'Pressure', 'Quality']
-        my_mesh1d = Mesh1d(macro_coordinates, orders, list_of_variables)
+        my_mesh1d = Mesh1D(macro_coordinates, orders, list_of_variables)
 
         print('Test inputs:')
         print('macro_grid = %s' % my_mesh1d.macro_grid)
