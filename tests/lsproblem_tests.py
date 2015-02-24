@@ -3,7 +3,7 @@ import numpy
 from solverls.lsproblem import LSProblem
 from solverls.mesh1d import Mesh1D
 
-__author__ = 'alfredoc'
+__author__ = 'Alfredo Carella'
 
 
 # TODO: These tests are not good at all. Proper tests to be implemented once the mesh class is correct.

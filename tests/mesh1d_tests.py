@@ -3,7 +3,7 @@ import numpy
 from solverls import speclib
 from solverls.mesh1d import Mesh1D
 
-__author__ = 'alfredoc'
+__author__ = 'Alfredo Carella'
 
 
 def test_mesh1d():    # Testing the mesh generation (plotting is not tested here)

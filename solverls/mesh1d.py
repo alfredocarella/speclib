@@ -1,4 +1,4 @@
-import matplotlib.pyplot
+import matplotlib.pyplot as plt
 import numpy
 from solverls.element1d import Element1D
 
@@ -44,12 +44,12 @@ class Mesh1D(object):
     def plot(self):
         # Plot nodes and element boundaries
         for el in self.elem:
-            matplotlib.pyplot.plot((el.boundaries[0], el.boundaries[-1]), (0, 0), 'r--', linewidth=1.0)
-            matplotlib.pyplot.plot(el.x_1v, el.x_1v * 0, 'ro')
-            matplotlib.pyplot.plot(el.boundaries, el.boundaries * 0, 'bs', markersize=10)
-            matplotlib.pyplot.text(sum(el.boundaries) / 2.0, +0.1, str(el.number), fontsize=15, color='blue')
+            plt.plot((el.boundaries['x'][0], el.boundaries['x'][-1]), (0, 0), 'r--', linewidth=1.0)
+            plt.plot(el.x_1v, el.x_1v * 0, 'ro')
+            plt.plot(el.boundaries['x'], el.boundaries['x'] * 0, 'bs', markersize=10)
+            plt.text(sum(el.boundaries['x']) / 2.0, +0.1, str(el.number), fontsize=15, color='blue')
             for node in range(el.order+1):
-                matplotlib.pyplot.text(el.x_1v[node], -0.1, str(self.gm[el.number][node]), fontsize=10, color='red')
+                plt.text(el.x_1v[node], -0.1, str(self.gm[el.number][node]), fontsize=10, color='red')
 
         # Write annotations
         macro_grid = self.macro_grid
@@ -58,11 +58,11 @@ class Mesh1D(object):
         Number of elements: {1}
         Variables: {2} {3}
         """.format(self.dof, len(self.elem), len(self.variables), self.variables)
-        matplotlib.pyplot.text((macro_grid[0] + macro_grid[-1]) / 4.0, -0.9, mesh_text)
-        matplotlib.pyplot.title('1-D mesh information')
-        matplotlib.pyplot.xlabel('Independent variable coordinate')
-        matplotlib.pyplot.axis([macro_grid[0], macro_grid[-1], -1, 1])
-        matplotlib.pyplot.show()
+        plt.text((macro_grid[0] + macro_grid[-1]) / 4.0, -0.9, mesh_text)
+        plt.title('1-D mesh information')
+        plt.xlabel('Independent variable coordinate')
+        plt.axis([macro_grid[0], macro_grid[-1], -1, 1])
+        plt.show()
 
 
 if __name__ == '__main__':
