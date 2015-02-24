@@ -15,7 +15,7 @@ class Mesh1D(object):
 
     def __init__(self, macro_grid, element_orders, variable_names=('f',)):
         # Mesh attributes
-        self.macro_grid = macro_grid
+        self.macro_grid = numpy.array(macro_grid, dtype=float)
         self.element_orders = numpy.atleast_1d(element_orders)
         self.variables = variable_names
         self.dof = (numpy.sum(self.element_orders) + 1) * len(self.variables)

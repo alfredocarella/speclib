@@ -7,12 +7,12 @@ __author__ = 'Alfredo Carella'
 class Element1D():
     """Spectral (high order) 1D element. One of the elementary blocks that compose a mesh (and a mesh object)"""
 
-    number_of_instances = 0
+    number_of_instances = 0 # FIXME: static instance counter not working as intended
 
     def __init__(self, boundaries, order, variables):
         Element1D.number_of_instances += 1
         # Numbering
-        self.number = Element1D.number_of_instances - 1
+        # self.number = Element1D.number_of_instances - 1
         self.variables = variables
         self.order = order
         self.pos = self.create_local_variable_indices()
