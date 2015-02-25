@@ -1,6 +1,7 @@
-import os
+import itertools
 import matplotlib.pyplot
 import numpy
+import os
 import pylab
 from solverls.iterator import Iterator
 from solverls.speclib import lagrange_interpolating_matrix, conj_grad_elem, conj_grad
@@ -55,34 +56,25 @@ class LSProblem(object):
     def set_equations(self, el):
         raise NotImplementedError("Child classes must implement this method.")
 
-    def set_operators(self, list_of_elements=None):
+    def set_operators(self):
 
-        if list_of_elements is None:
-            list_of_elements = range(len(self.mesh.elem))
-        else:
-            list_of_elements = list(list_of_elements)
-
-        # Create the operators
-        for elem in list_of_elements:
-            el_ = list_of_elements.index(elem)
-            element_size = len(self.mesh.gm[elem])
+        for el in self.mesh.elem:
+            element_size = (el.order + 1) * len(el.variables)
             self.op_l.append(numpy.zeros((element_size, element_size)))
             self.op_g.append(numpy.zeros(element_size))
 
-            opl_dict, opg_dict = self.set_equations(elem)
+            opl_dict, opg_dict = self.set_equations(el)
 
-            for varRow_ in self.mesh.variables:
-                for varCol_ in self.mesh.variables:
-                    if (varRow_+'.'+varCol_) in opl_dict:
-                        self.op_l[el_][numpy.ix_(self.mesh.elem[elem].pos[varRow_], self.mesh.elem[elem].pos[varCol_])] += \
-                            opl_dict[varRow_+'.'+varCol_]
-                if varRow_ in opg_dict:
-                    self.op_g[el_][self.mesh.elem[elem].pos[varRow_]] += opg_dict[varRow_]
+            for (row, col) in itertools.product(self.mesh.variables, repeat=2):
+                if (row+'.'+col) in opl_dict:
+                    self.op_l[-1][numpy.ix_(el.pos[row], el.pos[col])] += opl_dict[row + '.' + col]
+            for row in self.mesh.variables:
+                if row in opg_dict:
+                    self.op_g[-1][el.pos[row]] += opg_dict[row]
 
-            # Generate problem sub-matrices
-            lw_matrix = self.op_l[el_].T.dot(numpy.diag(self.mesh.elem[elem].x_nv))
-            self.k_el.append(lw_matrix.dot(self.op_l[el_]))
-            self.g_el.append(lw_matrix.dot(self.op_g[el_]))
+            lw_matrix = self.op_l[-1].T.dot(numpy.diag(el.x_nv))
+            self.k_el.append(lw_matrix.dot(self.op_l[-1]))
+            self.g_el.append(lw_matrix.dot(self.op_g[-1]))
 
     def set_solution(self, f):
         self.f_old = f
@@ -97,8 +89,8 @@ class LSProblem(object):
         it = Iterator(min_residual=1e-20, max_nonlinear_it=50, min_delta=1e-16)
         it.iterate(self, self.set_operators, self.set_boundary_conditions, [0, 1])
 
-        print("Iterations: {0!r:s}  -  Residual: {1:04.2e}  -  delta = {2:04.2e}".format(it.number_of_iterations,
-                                                                                          self.residual, it.delta))
+        solver_report = "Iterations: {0!r:s}  -  Residual: {1:04.2e}  -  delta = {2:04.2e}"
+        print(solver_report.format(it.number_of_iterations, self.residual, it.delta))
 
     def solve_linear_slab(self):
         self.f = numpy.zeros(self.mesh.dof_nv)
