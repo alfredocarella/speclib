@@ -12,22 +12,15 @@ __author__ = 'Alfredo Carella'
 class LSProblem(object):
     def __init__(self, mesh):
         self.mesh = mesh
-
-        self.f = numpy.zeros(mesh.dof)
-        self.f_old = numpy.zeros(mesh.dof)
-
-        self.op_l = []
-        self.op_g = []
-        self.k_el = []
-        self.g_el = []
-
         self.residual = 10.0
 
-    def compute_residual(self, list_of_elements=None):
+        self.f, self.f_old = numpy.zeros(mesh.dof), numpy.zeros(mesh.dof)
+        self.op_l, self.op_g, self.k_el, self.g_el = [], [], [], []
+
+    def compute_residual(self):
         """Compute the Least-Squares total residual."""
 
-        if list_of_elements is None:
-            list_of_elements = range(len(self.mesh.gm))
+        list_of_elements = range(len(self.mesh.gm))
 
         residual = 0.0
         for el_ in list_of_elements:
@@ -62,7 +55,6 @@ class LSProblem(object):
             element_size = (el.order + 1) * len(el.variables)
             self.op_l.append(numpy.zeros((element_size, element_size)))
             self.op_g.append(numpy.zeros(element_size))
-
             opl_dict, opg_dict = self.set_equations(el)
 
             for (row, col) in itertools.product(self.mesh.variables, repeat=2):

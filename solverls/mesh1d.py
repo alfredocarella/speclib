@@ -23,6 +23,7 @@ class Mesh1D(object):
         self.elem = []
         for el in range(len(self.macro_grid) - 1):
             self.elem.append(Element1D(self.macro_grid[el:el+2], self.element_orders[el], self.variables))
+            self.elem[el].number = el
         # Gathering matrix
         self.gm = self.create_gm()  # mesh attribute
 
