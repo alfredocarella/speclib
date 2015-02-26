@@ -25,7 +25,7 @@ class LSProblem(object):
         residual = 0.0
         for el_ in list_of_elements:
             w = self.mesh.elem[el_].w_nv
-            gm = self.mesh.gm[el_]
+            gm = self.mesh.elem[el_].nodes
             op_g = self.op_g[el_]
             op_l = self.op_l[el_]
             residual += w.dot((op_l.dot(self.f[gm])-op_g)**2)

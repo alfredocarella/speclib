@@ -20,22 +20,27 @@ class Mesh1D(object):
         self.variables = variable_names
         self.dof_1v = (numpy.sum(self.element_orders) + 1)
         self.dof = self.dof_1v * len(self.variables)
+
+        # Gathering matrix
+        self.gm = self.create_gm()  # mesh attribute
+
         # List of elements
         self.elem = []
         for el in range(len(self.macro_grid) - 1):
             self.elem.append(Element1D(self.macro_grid[el:el+2], self.element_orders[el], self.variables))
             self.elem[el].number = el
-        # Gathering matrix
-        self.gm = self.create_gm()  # mesh attribute
+            self.elem[el].nodes = self.gm[el]
 
     def create_gm(self):
         gm = []
-        for el in self.elem:
-            gm.append(numpy.zeros(len(el.variables) * (el.order + 1), dtype=numpy.int))
-            for var in el.variables:
-                start_number = el.variables.index(var) * self.dof_1v + sum(self.element_orders[range(el.number)])
-                span = numpy.arange(el.order + 1)
-                gm[-1][el.pos[var]] = numpy.add(span, start_number)
+        for el in range(len(self.element_orders)):
+            num_points = (self.element_orders[el] + 1)
+            gm.append(numpy.zeros(len(self.variables) * num_points, dtype=numpy.int))
+            for var in self.variables:
+                var_index = self.variables.index(var)
+                start_number = var_index * self.dof_1v + sum(self.element_orders[range(el)])
+                span = numpy.arange(num_points)
+                gm[-1][numpy.add(span, var_index * num_points)] = numpy.add(span, start_number)
         return gm
 
     def plot(self):
