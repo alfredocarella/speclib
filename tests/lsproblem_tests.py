@@ -107,20 +107,6 @@ class TestLSProblemNelNv(LSProblem):
         self.g_el[-1][-1] += weight * right_value
 
 
-# def testing_problem_non_linear():
-#     """Testing iterative routine for solving a non-linear problem"""
-#     macro_grid, orders, list_of_variables = numpy.array((0.0, 1.0, 2.0)), numpy.array((3, 3)), ['f']
-#     print("macro_grid = %r - orders = %r - list_of_variables = %r" % (macro_grid, orders, list_of_variables))
-#
-#     my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
-#     my_problem = TestLSProblemNonLinear(my_mesh1d)
-#     my_problem.plot_solution(['f'], 'testingProblemNonLinear.pdf')
-#
-#     print("The residual for this problem is %04.2e" % my_problem.residual)
-#
-#     print("Execution complete!")
-#
-#
 # def test_problem_torsional_1v():
 #     """Testing a torsional vibration problem (1 mass)"""
 #     macro_grid = numpy.linspace(0.0, 30.0, 50)
@@ -138,24 +124,7 @@ class TestLSProblemNelNv(LSProblem):
 #     # and therefore the full problem information is not saved
 #     # print("The residual for this problem is %04.2e" % my_problem.computeResidual())
 #
-#     my_memo = """
-#     2013-12-04: A MINIMUM EXAMPLE IS WORKING!!! :-)
-#
-#     Check-list for project (pending tasks):
-#     -  DONE! Add support for multi-equation
-#     -  DONE! Add support for multi-element
-#     -  DONE! Solve element by element
-#     -  DONE! Plot problem solutions (good enough now, can be improved later)
-#     -  DONE! Implement a solver routine for non-linear systems (Picard iteration is working)
-#     -  DONE! Implement a time-slab approach for only one time element at the time
-#     -  Try first mechanical problem (N variables with a self-generated system of equations)
-#     -  Consider creating animations (rotating masses / springs) before presenting script
-#     -  Consider including a steady-state Fourier analysis module
-#     - self.computeResidual(self) <--Compliance with BC not considered yet!
-#     - Find out how to do a code profiling
-#     """
-#
-#     print(my_memo + '\n' + "testingProblemTorsional1v(): Execution complete!")
+#     print("testingProblemTorsional1v(): Execution complete!")
 #
 #
 # def test_problem_torsional_nv():
@@ -180,19 +149,7 @@ class TestLSProblemNelNv(LSProblem):
 #     # and therefore the full problem information is not saved
 #     # print("The residual for this problem is %04.2e" % my_problem.computeResidual())
 #
-#     my_memo = """
-#     2013-12-??: A MINIMUM EXAMPLE IS WORKING!!! :-)
-#
-#     Check-list for project (pending tasks):
-#     -  Implement a non-linear time-slab approach
-#     -  Try first mechanical problem (N variables with a self-generated system of equations)
-#     -  Consider creating animations (rotating masses / springs) before presenting script
-#     -  Consider including a steady-state Fourier analysis module
-#     - self.computeResidual(self) <--Compliance with BC not considered yet!
-#     - Find out how to do a code profiling
-#     """
-#
-#     print(my_memo + '\n' + "testingProblemTorsionalNv(): Execution complete!")
+#     print("testingProblemTorsionalNv(): Execution complete!")
 #
 #     print("range(1,1) = %r" % range(1, 1))
 
@@ -204,31 +161,8 @@ class TestLSProblemNelNv(LSProblem):
 
 
 
-# class TestLSProblemNonLinear(LSProblem):
-#     """Class for testing a poisson problem in 2 variables on N elements."""
-#     def __init__(self, mesh):
-#         LSProblem.__init__(self, mesh)
-#         self.solve_nonlinear()
-#
-#     def set_equations(self, el):
-#         # operator_size = len(self.mesh.gm[el]) / self.mesh.number_of_variables
-#         op_l = {}
-#         op_g = {}
-#         x = self.mesh.x[self.mesh.gm[el]]
-#
-#         op_l['f.f'] = numpy.diag(self.f[self.mesh.gm[el]]).dot(self.mesh.dx[el])
-#
-#         op_g['f'] = 2*x**3 - 6*x**2 + 2*x + 2
-#
-#         return op_l, op_g
-#
-#     def set_boundary_conditions(self):
-#         weight = 1.0
-#         left_value = 1.0
-#         self.k_el[0][0, 0] += weight
-#         self.g_el[0][0] += weight * left_value
-#
-#
+
+
 # class TorsionalProblemTest(LSProblem):
 #     """Class for testing a torsional problem in N variables on N elements."""
 #     def __init__(self, mesh):
