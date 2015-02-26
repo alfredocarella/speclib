@@ -18,7 +18,8 @@ class Mesh1D(object):
         self.macro_grid = numpy.array(macro_grid, dtype=float)
         self.element_orders = numpy.atleast_1d(element_orders)
         self.variables = variable_names
-        self.dof = (numpy.sum(self.element_orders) + 1) * len(self.variables)
+        self.dof_1v = (numpy.sum(self.element_orders) + 1)
+        self.dof = self.dof_1v * len(self.variables)
         # List of elements
         self.elem = []
         for el in range(len(self.macro_grid) - 1):
@@ -29,17 +30,12 @@ class Mesh1D(object):
 
     def create_gm(self):
         gm = []
-        node_counter = 0
         for el in self.elem:
-            dof_element = len(el.variables) * (el.order + 1)
-            gm.append(numpy.zeros(dof_element, dtype=numpy.int))
-            var_counter = 0
+            gm.append(numpy.zeros(len(el.variables) * (el.order + 1), dtype=numpy.int))
             for var in el.variables:
+                start_number = el.variables.index(var) * self.dof_1v + sum(self.element_orders[range(el.number)])
                 span = numpy.arange(el.order + 1)
-                start_number = var_counter * self.dof // len(el.variables) + node_counter
                 gm[-1][el.pos[var]] = numpy.add(span, start_number)
-                var_counter += 1
-            node_counter += el.order
         return gm
 
     def plot(self):
