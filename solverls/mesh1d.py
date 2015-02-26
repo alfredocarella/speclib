@@ -31,14 +31,14 @@ class Mesh1D(object):
         gm = []
         node_counter = 0
         for el in self.elem:
-            dof_element = len(self.variables) * (el.order + 1)
+            dof_element = len(el.variables) * (el.order + 1)
             gm.append(numpy.zeros(dof_element, dtype=numpy.int))
-            for var_counter in range(len(self.variables)):
-                start_position = var_counter * (el.order + 1)
-                end_position = start_position + el.order + 1
-                start_number = var_counter * self.dof // len(self.variables) + node_counter
-                end_number = start_number + el.order + 1
-                gm[-1][start_position: end_position] = numpy.arange(start_number, end_number)
+            var_counter = 0
+            for var in el.variables:
+                span = numpy.arange(el.order + 1)
+                start_number = var_counter * self.dof // len(el.variables) + node_counter
+                gm[-1][el.pos[var]] = numpy.add(span, start_number)
+                var_counter += 1
             node_counter += el.order
         return gm
 
