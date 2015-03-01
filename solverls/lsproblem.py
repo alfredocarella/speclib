@@ -166,5 +166,4 @@ if __name__ == '__main__':
         print('')
         print('Test outputs:')
         print("The residual for this problem is %04.2e" % my_problem.residual)
-
     minimum_nonlinear_example()
