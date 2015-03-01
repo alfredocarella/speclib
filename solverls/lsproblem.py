@@ -1,5 +1,5 @@
 import itertools
-import matplotlib.pyplot
+import matplotlib.pyplot as plt
 import numpy
 import os
 import pylab
@@ -59,43 +59,32 @@ class LSProblem(object):
             residual += w.dot((op_l.dot(self.f[gm])-op_g)**2)
         return residual
 
-    # TODO: "lsproblem.plot_solution()" still needs to be polished and documented
-    def plot_solution(self, list_of_variables=None, filename=None):
+    def plot(self, variables=None, filename=None):
 
-        if list_of_variables is None:
-            list_of_variables = self.mesh.list_of_variables
+        if variables is None:
+            variables = self.mesh.variables
 
-        fig = matplotlib.pyplot.figure()
-        for variable_name in list_of_variables:
-            variable_number = self.mesh.variables.index(variable_name)
-            x_in = numpy.zeros([])
-            y_in = numpy.zeros([])
-            x_out = numpy.zeros([])
-            y_out = numpy.zeros([])
-            for elem in range(len(self.mesh.elem)):
-                variable_indices = self.mesh.gm[elem][self.mesh.elem[elem].pos[variable_name]]
-                x_in_local = self.mesh.elem[elem].x_1v
-                y_in_local = self.f[variable_indices]
-                x_out_local = numpy.linspace(self.mesh.macro_grid[elem], self.mesh.macro_grid[elem+1], 10)
-                y_out_local = lagrange_interpolating_matrix(x_in_local, x_out_local).dot(y_in_local)
-                x_in = numpy.append(x_in, x_in_local)
-                y_in = numpy.append(y_in, y_in_local)
-                x_out = numpy.append(x_out, x_out_local)
-                y_out = numpy.append(y_out, y_out_local)
+        fig = plt.figure()
+        for var in variables:
+            for el in self.mesh.elem:
+                plt.subplot(100*len(variables) + 10 + el.variables.index(var)+1)
+                plt.xlabel('x (independent variable)')
+                plt.ylabel(var)
 
-            matplotlib.pyplot.subplot(100*len(list_of_variables) + 10 + variable_number+1)
-            matplotlib.pyplot.plot(x_out, y_out, '--', linewidth=2.0)
-            matplotlib.pyplot.plot(x_in, y_in, '.', markersize=8.0)
-            matplotlib.pyplot.ylabel(variable_name)
-            matplotlib.pyplot.xlabel('x (independent variable)')
+                x_in, y_in = el.x_1v, self.f[el.nodes[el.pos[var]]]
+                plt.plot(x_in, y_in, 's', markersize=8.0, color='g')
+
+                x_out = numpy.linspace(el.boundaries['x'][0], el.boundaries['x'][1], 20)
+                y_out = lagrange_interpolating_matrix(x_in, x_out).dot(y_in)
+                plt.plot(x_out, y_out, '--', linewidth=2.0, color='b')
 
         if filename is not None:
             if not os.path.exists('output'):
                 os.makedirs('output')
             pylab.savefig('output//'+filename, bbox_inches=0)
-            print("Functions %r have been printed to file '%s'" % (list_of_variables, filename))
+            print("Functions %r have been printed to file '%s'" % (variables, filename))
         else:
-            matplotlib.pyplot.show()
+            plt.show()
 
         return fig
 
@@ -153,7 +142,7 @@ if __name__ == '__main__':
         def set_equations(self, el):
             # Solution: f(x) = 2-(x-1)^2
             x = el.x_nv
-            op_l = {'f.f': numpy.diag(self.f[el.nodes]).dot(el.dx)}
+            op_l = {'f.f': self.f[el.nodes] * el.dx}
             op_g = {'f': 2*x**3 - 6*x**2 + 2*x + 2}
             return op_l, op_g
 
@@ -168,7 +157,7 @@ if __name__ == '__main__':
         macro_grid, orders, variables = [0.0, 1.0, 2.0], [4, 4], ['f']
         my_mesh1d = Mesh1D(macro_grid, orders, variables)
         my_problem = TestLSProblemNonLinear(my_mesh1d)
-        my_problem.plot_solution(['f'])
+        my_problem.plot()
 
         print('Test inputs:')
         print('macro_grid = %s' % my_mesh1d.macro_grid)

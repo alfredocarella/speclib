@@ -20,10 +20,8 @@ class Mesh1D(object):
         self.variables = variable_names
         self.dof_1v = (numpy.sum(self.element_orders) + 1)
         self.dof = self.dof_1v * len(self.variables)
-
         # Gathering matrix
-        self.gm = self.create_gm()  # mesh attribute
-
+        self.gm = self.create_gm()
         # List of elements
         self.elem = []
         for el in range(len(self.macro_grid) - 1):

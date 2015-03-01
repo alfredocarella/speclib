@@ -41,7 +41,7 @@ def test_problem_nel_nv():
 
     my_problem = TestLSProblemNelNv(my_mesh1d)
     my_problem.residual = my_problem.compute_residual()
-    my_problem.plot_solution(['f', 'g'], 'testingProblemNelNv.pdf')
+    my_problem.plot(['f', 'g'], 'testingProblemNelNv.pdf')
 
     # print("my_problem.opL = %r" % my_problem.opL)
     # print("my_problem.opG = %r" % my_problem.opG)
