@@ -103,27 +103,24 @@ class TestLSProblemNelNv(LSProblem):
         self.g_el[-1][-1] += weight * right_value
 
 
-# def test_problem_torsional_1v():
-#     """Testing a torsional vibration problem (1 mass)"""
-#     macro_grid = numpy.linspace(0.0, 30.0, 50)
-#     orders = [4] * (len(macro_grid)-1)
-#     list_of_variables = ['v0', 'x0']
-#     # print("macro_grid = %r - orders = %r - list_of_variables = %r" % (macro_grid, orders, list_of_variables))
-#
-#     my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
-#     my_problem = TorsionalProblemTest(my_mesh1d)
-#     my_problem..solve_linear_slab()
-#     my_problem.plot_solution()  # filename='testingProblemTorsional1v.pdf')
-#
-#     print("'TorsionalProblemTest.computeResidual()' does not work.")
-#
-#     # The following line will not work because my_problem.opL and and my_problem.opG have been reduced to 1 element
-#     # and therefore the full problem information is not saved
-#     # print("The residual for this problem is %04.2e" % my_problem.computeResidual())
-#
-#     print("testingProblemTorsional1v(): Execution complete!")
-#
-#
+def test_problem_torsional_1v():
+    """Testing a torsional vibration problem (1 mass)"""
+    macro_grid = numpy.linspace(0.0, 30.0, 50)
+    orders = [4] * (len(macro_grid)-1)
+    list_of_variables = ['v0', 'x0']
+    # print("macro_grid = %r - orders = %r - list_of_variables = %r" % (macro_grid, orders, list_of_variables))
+
+    my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
+    my_problem = TorsionalProblemTest(my_mesh1d)
+    my_problem.solve_linear_slab()
+    my_problem.plot()  # filename='testingProblemTorsional1v.pdf')
+
+    print("'TorsionalProblemTest.computeResidual()' does not work.")
+    # The following line will not work because my_problem.opL and and my_problem.opG have been reduced to 1 element
+    # and therefore the full problem information is not saved
+    # print("The residual for this problem is %04.2e" % my_problem.computeResidual())
+
+
 # def test_problem_torsional_nv():
 #     """Testing a torsional vibration problem (N masses)"""
 #     macro_grid = numpy.linspace(0.0, 30.0, 40)
@@ -160,43 +157,43 @@ class TestLSProblemNelNv(LSProblem):
 
 
 
-# class TorsionalProblemTest(LSProblem):
-#     """Class for testing a torsional problem in N variables on N elements."""
-#
-#     def set_equations(self, el):
-#         op_l = {}
-#         op_g = {}
-#         operator_size = len(self.mesh.gm[el]) / self.mesh.number_of_variables
-#
-#         id_mat = numpy.identity(operator_size)
-#         zero_vec = numpy.zeros(operator_size)
-#         dx = self.mesh.dx[el]
-#         # f = numpy.diag(self.f[self.mesh.gm[el]]) # <--only for non-linear problems
-#
-#         m = 1.0
-#         c = 0.2
-#         k = 1.0
-#
-#         op_l['v0.v0'] = m*dx + c*id_mat
-#         op_l['v0.x0'] = k*id_mat
-#         op_l['x0.v0'] = id_mat
-#         op_l['x0.x0'] = -dx
-#
-#         op_g['v0'] = zero_vec  # F
-#         op_g['x0'] = zero_vec  #
-#
-#         return op_l, op_g
-#
-#     def set_boundary_conditions(self):
-#         weight = 1.0
-#         initial_speed = 0.0
-#         initial_position = 5.0
-#         self.k_el[0][0, 0] += weight
-#         self.g_el[0][0] += weight * initial_speed
-#         self.k_el[0][5, 5] += weight
-#         self.g_el[0][5] += weight * initial_position
-#
-#
+class TorsionalProblemTest(LSProblem):
+    """Class for testing a torsional problem in N variables on N elements."""
+
+    def set_equations(self, el):
+        op_l = {}
+        op_g = {}
+        operator_size = el.order + 1
+
+        id_mat = numpy.identity(operator_size)
+        zero_vec = numpy.zeros(operator_size)
+        dx = el.dx
+        # f = numpy.diag(self.f[self.mesh.gm[el]]) # <--only for non-linear problems
+
+        m = 1.0
+        c = 0.2
+        k = 1.0
+
+        op_l['v0.v0'] = m*dx + c*id_mat
+        op_l['v0.x0'] = k*id_mat
+        op_l['x0.v0'] = id_mat
+        op_l['x0.x0'] = -dx
+
+        op_g['v0'] = zero_vec  # F
+        op_g['x0'] = zero_vec  #
+
+        return op_l, op_g
+
+    def set_boundary_conditions(self):
+        weight = 1.0
+        initial_speed = 0.0
+        initial_position = 5.0
+        self.k_el[0][0, 0] += weight
+        self.g_el[0][0] += weight * initial_speed
+        self.k_el[0][5, 5] += weight
+        self.g_el[0][5] += weight * initial_position
+
+
 # class TorsionalProblemTestNv(LSProblem):
 #     """Class for testing a torsional problem in N variables on N elements."""
 #     def set_equations(self, el):

@@ -18,29 +18,28 @@ class LSProblem(object):
         self.op_l, self.op_g, self.k_el, self.g_el = [], [], [], []
 
     def solve_linear(self):
-        self.set_operators()
+        for el in self.mesh.elem:
+            self.set_operators(el)
         self.set_boundary_conditions()
         self.f, cg_iterations = conj_grad_elem(self.k_el, self.g_el, self.mesh.gm, self.mesh.dof)
 
-    def set_operators(self):
+    def set_operators(self, el):
+        element_size = (el.order + 1) * len(el.variables)
+        self.op_l.append(numpy.zeros((element_size, element_size)))
+        self.op_g.append(numpy.zeros(element_size))
+        opl_dict, opg_dict = self.set_equations(el)
 
-        for el in self.mesh.elem:
-            element_size = (el.order + 1) * len(el.variables)
-            self.op_l.append(numpy.zeros((element_size, element_size)))
-            self.op_g.append(numpy.zeros(element_size))
-            opl_dict, opg_dict = self.set_equations(el)
+        for (row, col) in itertools.product(self.mesh.variables, repeat=2):
+            if (row+'.'+col) in opl_dict:
+                self.op_l[-1][numpy.ix_(el.pos[row], el.pos[col])] += opl_dict[row + '.' + col]
+        for row in self.mesh.variables:
+            if row in opg_dict:
+                self.op_g[-1][el.pos[row]] += opg_dict[row]
 
-            for (row, col) in itertools.product(self.mesh.variables, repeat=2):
-                if (row+'.'+col) in opl_dict:
-                    self.op_l[-1][numpy.ix_(el.pos[row], el.pos[col])] += opl_dict[row + '.' + col]
-            for row in self.mesh.variables:
-                if row in opg_dict:
-                    self.op_g[-1][el.pos[row]] += opg_dict[row]
-
-            # lw_matrix = self.op_l[-1].T.dot(numpy.diag(el.x_nv))
-            lw_matrix = self.op_l[-1].T * el.w_nv
-            self.k_el.append(lw_matrix.dot(self.op_l[-1]))
-            self.g_el.append(lw_matrix.dot(self.op_g[-1]))
+        # lw_matrix = self.op_l[-1].T.dot(numpy.diag(el.x_nv))
+        lw_matrix = self.op_l[-1].T * el.w_nv
+        self.k_el.append(lw_matrix.dot(self.op_l[-1]))
+        self.g_el.append(lw_matrix.dot(self.op_g[-1]))
 
     def set_equations(self, el):
         raise NotImplementedError("Child classes must implement this method.")
@@ -72,11 +71,11 @@ class LSProblem(object):
                 plt.ylabel(var)
 
                 x_in, y_in = el.x_1v, self.f[el.nodes[el.pos[var]]]
-                plt.plot(x_in, y_in, 's', markersize=8.0, color='g')
+                plt.plot(x_in, y_in, '.', markersize=8.0, color='g')
 
                 x_out = numpy.linspace(el.boundaries['x'][0], el.boundaries['x'][1], 20)
                 y_out = lagrange_interpolating_matrix(x_in, x_out).dot(y_in)
-                plt.plot(x_out, y_out, '--', linewidth=2.0, color='b')
+                plt.plot(x_out, y_out, '-', linewidth=2.0, color='b')
 
         if filename is not None:
             if not os.path.exists('output'):
@@ -90,30 +89,24 @@ class LSProblem(object):
 
     # The following should belong to another sub-class (e.g. LSProblemTimeMarching)
     def solve_linear_slab(self):
-        self.f = numpy.zeros(self.mesh.dof_nv)
+        self.f = numpy.zeros(self.mesh.dof)
+        for el in self.mesh.elem:
+            self.set_operators(el)
 
-        self.set_operators([0])
-        self.set_boundary_conditions()
-        f_elem, cg_iterations = conj_grad(self.k_el[0], self.g_el[0])
-        self.f[self.mesh.gm[0]] = f_elem
+            if el.number > 0:
+                self.set_slab_boundary_conditions(el)
+            else:
+                self.set_boundary_conditions()
 
-        for el_ in range(1, self.mesh.number_of_elements):
-            self.set_operators([el_])
-            self.set_slab_boundary_conditions(el_)
             f_elem, cg_iterations = conj_grad(self.k_el[0], self.g_el[0])
-            self.f[self.mesh.gm[el_]] = f_elem
+            self.f[el.nodes] = f_elem
 
     def set_slab_boundary_conditions(self, el):
-        weight = 1.0
-        for varName in self.mesh.list_of_variables:
-
-            end_value_indices = self.mesh.gm[el-1][self.mesh.pos[el-1][varName]]
-            start_value_indices = self.mesh.pos[el][varName]
-            f_index = end_value_indices[-1]
-            gk_index = start_value_indices[0]
-
-            self.k_el[0][gk_index, gk_index] += weight
-            self.g_el[0][gk_index] += weight * self.f[f_index]
+        for var in el.variables:
+            f_index = el.nodes[el.pos[var]][0]
+            gk_index = el.pos[var][0]
+            self.k_el[0][gk_index, gk_index] += 1.0
+            self.g_el[0][gk_index] += self.f[f_index]
 
     # The following should belong to another sub-class (e.g. LSProblemNonLinear)
     def solve_nonlinear(self):
