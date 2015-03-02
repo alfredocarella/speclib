@@ -22,6 +22,7 @@ class LSProblem(object):
             self.set_operators(el)
         self.set_boundary_conditions()
         self.f, cg_iterations = conj_grad_elem(self.k_el, self.g_el, self.mesh.gm, self.mesh.dof)
+        self.residual = sum(self.compute_residual(el) for el in self.mesh.elem)
 
     def set_operators(self, el):
         element_size = (el.order + 1) * len(el.variables)
@@ -47,16 +48,12 @@ class LSProblem(object):
     def set_boundary_conditions(self):
         raise NotImplementedError("Child classes must implement this method.")
 
-    def compute_residual(self):
+    def compute_residual(self, el):
         """Compute the Least-Squares total residual."""
-
-        residual = 0.0
-        for el in self.mesh.elem:
-            w, gm = el.w_nv, el.nodes
-            op_g = self.op_g[el.number]
-            op_l = self.op_l[el.number]
-            residual += w.dot((op_l.dot(self.f[gm])-op_g)**2)
-        return residual
+        w, gm = el.w_nv, el.nodes
+        op_g = self.op_g[el.number]
+        op_l = self.op_l[el.number]
+        return w.dot((op_l.dot(self.f[gm])-op_g)**2)
 
     def plot(self, variables=None, filename=None):
 
@@ -90,6 +87,7 @@ class LSProblem(object):
     # The following should belong to another sub-class (e.g. LSProblemTimeMarching)
     def solve_linear_slab(self):
         self.f = numpy.zeros(self.mesh.dof)
+        self.residual = 0
         for el in self.mesh.elem:
             self.set_operators(el)
 
@@ -100,6 +98,7 @@ class LSProblem(object):
 
             f_elem, cg_iterations = conj_grad(self.k_el[0], self.g_el[0])
             self.f[el.nodes] = f_elem
+            self.residual += self.compute_residual(el)
 
     def set_slab_boundary_conditions(self, el):
         for var in el.variables:
