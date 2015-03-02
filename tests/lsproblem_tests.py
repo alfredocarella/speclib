@@ -13,6 +13,7 @@ def test_problem_1el_1v():
     my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
 
     my_problem = TestLSProblem1el1v(my_mesh1d)
+    my_problem.solve_linear()
 
     my_problem.residual = my_problem.compute_residual()
     assert_almost_equal(my_problem.residual, 0.0)
@@ -40,6 +41,7 @@ def test_problem_nel_nv():
     assert_equal(my_mesh1d.variables, list_of_variables)
 
     my_problem = TestLSProblemNelNv(my_mesh1d)
+    my_problem.solve_linear()
     my_problem.residual = my_problem.compute_residual()
     my_problem.plot(['f', 'g'], 'testingProblemNelNv.pdf')
 
@@ -56,9 +58,6 @@ def test_problem_nel_nv():
 
 class TestLSProblem1el1v(LSProblem):
     """Class for testing a simple problem in 1 variable on 1 element."""
-    def __init__(self, mesh):
-        LSProblem.__init__(self, mesh)
-        self.solve_linear()
 
     def set_equations(self, el):
         operator_size = el.order + 1
@@ -80,9 +79,6 @@ class TestLSProblem1el1v(LSProblem):
 
 class TestLSProblemNelNv(LSProblem):
     """Class for testing a poisson problem in 2 variables on N elements."""
-    def __init__(self, mesh):
-        LSProblem.__init__(self, mesh)
-        self.solve_linear()
 
     def set_equations(self, el):
         operator_size = el.order + 1
@@ -116,6 +112,7 @@ class TestLSProblemNelNv(LSProblem):
 #
 #     my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
 #     my_problem = TorsionalProblemTest(my_mesh1d)
+#     my_problem..solve_linear_slab()
 #     my_problem.plot_solution()  # filename='testingProblemTorsional1v.pdf')
 #
 #     print("'TorsionalProblemTest.computeResidual()' does not work.")
@@ -165,9 +162,6 @@ class TestLSProblemNelNv(LSProblem):
 
 # class TorsionalProblemTest(LSProblem):
 #     """Class for testing a torsional problem in N variables on N elements."""
-#     def __init__(self, mesh):
-#         LSProblem.__init__(self, mesh)
-#         self.solve_linear_slab()
 #
 #     def set_equations(self, el):
 #         op_l = {}
