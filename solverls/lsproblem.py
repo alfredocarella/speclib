@@ -25,19 +25,20 @@ class LSProblem(object):
         self.residual = sum(self.compute_residual(el) for el in self.mesh.elem)
 
     def set_operators(self, el):
+
+        op_dict = self.set_equations(el)
+
         element_size = (el.order + 1) * len(el.variables)
         self.op_l.append(numpy.zeros((element_size, element_size)))
-        self.op_g.append(numpy.zeros(element_size))
-        opl_dict, opg_dict = self.set_equations(el)
-
         for (row, col) in itertools.product(self.mesh.variables, repeat=2):
-            if (row+'.'+col) in opl_dict:
-                self.op_l[-1][numpy.ix_(el.pos[row], el.pos[col])] += opl_dict[row + '.' + col]
+            if (row+'.'+col) in op_dict:
+                self.op_l[-1][numpy.ix_(el.pos[row], el.pos[col])] += op_dict[row + '.' + col]
+        self.op_g.append(numpy.zeros(element_size))
         for row in self.mesh.variables:
-            if row in opg_dict:
-                self.op_g[-1][el.pos[row]] += opg_dict[row]
+            if row in op_dict:
+                self.op_g[-1][el.pos[row]] += op_dict[row]
 
-        # lw_matrix = self.op_l[-1].T.dot(numpy.diag(el.x_nv))
+        # lw_matrix = self.op_l[-1].T.dot(numpy.diag(el.w_nv))
         lw_matrix = self.op_l[-1].T * el.w_nv
         self.k_el.append(lw_matrix.dot(self.op_l[-1]))
         self.g_el.append(lw_matrix.dot(self.op_g[-1]))
