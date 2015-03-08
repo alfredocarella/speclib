@@ -1,28 +1,20 @@
 import itertools
-import matplotlib.pyplot as plt
-import numpy
 import os
+
+from matplotlib import pyplot as plt
+import numpy
 import pylab
-from solverls.iterator import Iterator
-from solverls.speclib import lagrange_interpolating_matrix, conj_grad_elem, conj_grad
 
-__author__ = 'Alfredo Carella'
+from solverls.speclib import lagrange_interpolating_matrix
 
 
-class LSProblem(object):
+class LSProblem:
     def __init__(self, mesh):
         self.mesh = mesh
         self.residual = 10.0
 
         self.f, self.f_old = numpy.zeros(mesh.dof), numpy.zeros(mesh.dof)
         self.op_l, self.op_g, self.k_el, self.g_el = [], [], [], []
-
-    def solve_linear(self):
-        for el in self.mesh.elem:
-            self.set_operators(el)
-        self.set_boundary_conditions()
-        self.f, cg_iterations = conj_grad_elem(self.k_el, self.g_el, self.mesh.gm, self.mesh.dof)
-        self.residual = sum(self.compute_residual(el) for el in self.mesh.elem)
 
     def set_operators(self, el):
 
@@ -42,12 +34,6 @@ class LSProblem(object):
         lw_matrix = self.op_l[-1].T * el.w_nv
         self.k_el.append(lw_matrix.dot(self.op_l[-1]))
         self.g_el.append(lw_matrix.dot(self.op_g[-1]))
-
-    def set_equations(self, el):
-        raise NotImplementedError("Child classes must implement this method.")
-
-    def set_boundary_conditions(self):
-        raise NotImplementedError("Child classes must implement this method.")
 
     def compute_residual(self, el):
         """Compute the Least-Squares total residual."""
@@ -85,78 +71,11 @@ class LSProblem(object):
 
         return fig
 
-    # The following should belong to another sub-class (e.g. LSProblemTimeMarching)
-    def solve_linear_slab(self):
-        self.f = numpy.zeros(self.mesh.dof)
-        self.residual = 0
-        for el in self.mesh.elem:
-            self.set_operators(el)
+    def set_equations(self, el):
+        raise NotImplementedError("Child classes must implement this method.")
 
-            if el.number > 0:
-                self.set_slab_boundary_conditions(el)
-            else:
-                self.set_boundary_conditions()
+    def set_boundary_conditions(self):
+        raise NotImplementedError("Child classes must implement this method.")
 
-            f_elem, cg_iterations = conj_grad(self.k_el[0], self.g_el[0])
-            self.f[el.nodes] = f_elem
-            self.residual += self.compute_residual(el)
-
-    def set_slab_boundary_conditions(self, el):
-        for var in el.variables:
-            f_index = el.nodes[el.pos[var]][0]
-            gk_index = el.pos[var][0]
-            self.k_el[0][gk_index, gk_index] += 1.0
-            self.g_el[0][gk_index] += self.f[f_index]
-
-    # The following should belong to another sub-class (e.g. LSProblemNonLinear)
-    def solve_nonlinear(self):
-        self.f = numpy.ones(self.mesh.dof)    # seed for guessing the solution
-        it = Iterator(min_residual=1e-20, max_nonlinear_it=50, min_delta=1e-16)
-        it.iterate(self)
-
-        solver_report = "Iterations: {0!r:s}  -  Residual: {1:04.2e}  -  delta = {2:04.2e}"
-        print(solver_report.format(it.solution_iterations, self.residual, it.delta))
-
-    def solve_nonlinear_slab(self):
-        raise NotImplementedError("This method has not been implemented yet.")  # TODO: Pending functionality
-
-
-if __name__ == '__main__':
-
-    from solverls.mesh1d import Mesh1D
-
-    # TODO: This example must be added to the test suite.
-    class TestLSProblemNonLinear(LSProblem):
-        """Class for testing a poisson problem in 2 variables on N elements."""
-        def __init__(self, mesh):
-            LSProblem.__init__(self, mesh)
-            self.solve_nonlinear()
-
-        def set_equations(self, el):
-            # Solution: f(x) = 2-(x-1)^2
-            x = el.x_nv
-            op_l = {'f.f': self.f[el.nodes] * el.dx}
-            op_g = {'f': 2*x**3 - 6*x**2 + 2*x + 2}
-            return op_l, op_g
-
-        def set_boundary_conditions(self):
-            weight, left_value = 1.0, 1.0
-            self.k_el[0][0, 0] += weight
-            self.g_el[0][0] += weight * left_value
-
-    def minimum_nonlinear_example():
-        """Testing iterative routine for solving a non-linear problem"""
-
-        macro_grid, orders, variables = [0.0, 1.0, 2.0], [4, 4], ['f']
-        my_mesh1d = Mesh1D(macro_grid, orders, variables)
-        my_problem = TestLSProblemNonLinear(my_mesh1d)
-        my_problem.plot()
-
-        print('Test inputs:')
-        print('macro_grid = %s' % my_mesh1d.macro_grid)
-        print('orders = %s' % my_mesh1d.element_orders)
-        print('variables = %s' % my_mesh1d.variables)
-        print('')
-        print('Test outputs:')
-        print("The residual for this problem is %04.2e" % my_problem.residual)
-    minimum_nonlinear_example()
+    def solve(self):
+        raise NotImplementedError("Child classes must implement this method.")

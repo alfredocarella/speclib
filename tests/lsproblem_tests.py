@@ -1,7 +1,9 @@
 from nose.tools import assert_almost_equal, assert_equal
 import numpy
-from solverls.lsproblem import LSProblem
+
+from solverls.lsproblemlinear import LSProblemLinear
 from solverls.mesh1d import Mesh1D
+
 
 __author__ = 'Alfredo Carella'
 
@@ -12,18 +14,18 @@ def test_problem_1el_1v():
     macro_grid, orders, list_of_variables = numpy.array((0.0, 2.0)), numpy.array(4), ['f']
     my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
 
-    my_problem = TestLSProblem1el1v(my_mesh1d)
-    my_problem.solve_linear()
+    my_problem = TestLSProblemLinear1El1V(my_mesh1d)
+    my_problem.solve()
 
     assert_almost_equal(my_problem.residual, 0.0)
     # numpy.testing.assert_allclose(
         # my_problem.Ke, my_problem.opL[0].T.dot(numpy.diag(my_problem.mesh.longQuadWeights[0])).dot(my_problem.opL[
         # 0])) #<--Missing BCs
 
-    print("my_problem.opL = %r" % my_problem.op_l)
-    print("my_problem.opG = %r" % my_problem.op_g)
-    print("my_problem.Ke = %r" % my_problem.k_el)
-    print("my_problem.Ge = %r" % my_problem.g_el)
+    # print("my_problem.opL = %r" % my_problem.op_l)
+    # print("my_problem.opG = %r" % my_problem.op_g)
+    # print("my_problem.Ke = %r" % my_problem.k_el)
+    # print("my_problem.Ge = %r" % my_problem.g_el)
 
     print("The residual for this problem is %04.2e" % my_problem.residual)
     print('\nThe solution vector is %r\n' % my_problem.f)
@@ -37,8 +39,8 @@ def test_problem_nel_nv():
     numpy.testing.assert_array_equal(my_mesh1d.element_orders, orders)
     assert_equal(my_mesh1d.variables, list_of_variables)
 
-    my_problem = TestLSProblemNelNv(my_mesh1d)
-    my_problem.solve_linear()
+    my_problem = TestLSProblemLinearNelNv(my_mesh1d)
+    my_problem.solve()
     assert_almost_equal(my_problem.residual, 0.0)
 
     my_problem.plot(['f', 'g'], 'testingProblemNelNv.pdf')
@@ -53,16 +55,13 @@ def test_problem_torsional_1v():
     list_of_variables = ['v0', 'x0']
 
     my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
-    my_problem = TorsionalProblemTest(my_mesh1d)
+    my_problem = TorsionalProblemLinearTest(my_mesh1d)
     my_problem.solve_linear_slab()
     assert_almost_equal(my_problem.residual, 0.0, 6)
 
     my_problem.plot()  # filename='testingProblemTorsional1v.pdf')
 
-    print("'TorsionalProblemTest.computeResidual()' does not work.")
-    # The following line will not work because my_problem.opL and and my_problem.opG have been reduced to 1 element
-    # and therefore the full problem information is not saved
-    # print("The residual for this problem is %04.2e" % my_problem.computeResidual())
+    print("The residual for this problem is %04.2e" % my_problem.residual)
 
 
 def test_problem_torsional_nv():
@@ -78,16 +77,13 @@ def test_problem_torsional_nv():
     print(list_of_variables)
 
     my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
-    my_problem = TorsionalProblemTestNv(my_mesh1d)
+    my_problem = TorsionalProblemLinearTestNv(my_mesh1d)
     my_problem.solve_linear_slab()
     # assert_almost_equal(my_problem.residual, 0.0, 6)
 
     my_problem.plot()  # filename='testingProblemTorsionalNv.pdf')
 
-    print("'TorsionalProblemTestNv.computeResidual()' does not work.")
-    # The following line will not work because my_problem.opL and and my_problem.opG have been reduced to 1 element
-    # and therefore the full problem information is not saved
-    # print("The residual for this problem is %04.2e" % my_problem.computeResidual())
+    print("The residual for this problem is %04.2e" % my_problem.residual)
 
     print("range(1,1) = %r" % range(1, 1))
 
@@ -99,7 +95,7 @@ def test_problem_torsional_nv():
 
 
 
-class TestLSProblem1el1v(LSProblem):
+class TestLSProblemLinear1El1V(LSProblemLinear):
     """Class for testing a simple problem in 1 variable on 1 element."""
 
     def set_equations(self, el):
@@ -119,7 +115,7 @@ class TestLSProblem1el1v(LSProblem):
         self.g_el[-1][-1] += weight * right_value
 
 
-class TestLSProblemNelNv(LSProblem):
+class TestLSProblemLinearNelNv(LSProblemLinear):
     """Class for testing a poisson problem in 2 variables on N elements."""
 
     def set_equations(self, el):
@@ -144,7 +140,7 @@ class TestLSProblemNelNv(LSProblem):
         self.g_el[-1][-1] += weight * right_value
 
 
-class TorsionalProblemTest(LSProblem):
+class TorsionalProblemLinearTest(LSProblemLinear):
     """Class for testing a torsional problem in N variables on N elements."""
 
     def set_equations(self, el):
@@ -179,7 +175,7 @@ class TorsionalProblemTest(LSProblem):
         self.g_el[0][5] += weight * initial_position
 
 
-class TorsionalProblemTestNv(LSProblem):
+class TorsionalProblemLinearTestNv(LSProblemLinear):
     """Class for testing a torsional problem in N variables on N elements."""
     def set_equations(self, el):
         op_dict = {}
@@ -248,11 +244,8 @@ class TorsionalProblemTestNv(LSProblem):
 
     def set_boundary_conditions(self):
         weight = 10.0
-        x0_index = self.mesh.elem[0].pos['x0'][0]
-        initial_speed = 0.0
-        initial_position = 0.0
-
-        self.k_el[0][0, 0] += weight
-        self.g_el[0][0] += weight * initial_speed
-        self.k_el[0][x0_index, x0_index] += weight
-        self.g_el[0][x0_index] += weight * initial_position
+        initial_value = {'v0': 0.0, 'x0': 0.0}
+        for var in ['v0', 'x0']:
+            var_index = self.mesh.elem[0].pos[var][0]
+            self.k_el[0][var_index, var_index] += weight
+            self.g_el[0][var_index] += weight * initial_value[var]

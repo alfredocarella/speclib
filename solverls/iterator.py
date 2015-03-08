@@ -1,5 +1,7 @@
 import numpy
-from solverls.speclib import conj_grad, conj_grad_elem
+
+from solverls.speclib import conj_grad_elem
+
 
 __author__ = 'Alfredo Carella'
 
@@ -20,14 +22,17 @@ class Iterator(object):
     def iterate(self, problem):
         while (not self.converged) and (not self.reached_max_it) and self.converging:
 
-            problem.set_operators()
+            for el in problem.mesh.elem:
+                problem.set_operators(el)
             problem.set_boundary_conditions()
             problem.f_old = problem.f.copy()
 
             problem.f, num_cg_it = conj_grad_elem(problem.k_el, problem.g_el, problem.mesh.gm, problem.mesh.dof)
             self.solution_iterations += 1
 
-            problem.residual = problem.compute_residual()
+            problem.residual = 0
+            for el in problem.mesh.elem:
+                problem.residual += problem.compute_residual(el)
             self.delta = numpy.linalg.norm(problem.f - problem.f_old) / numpy.linalg.norm(problem.f)
 
             self.converged = problem.residual < self.min_residual
