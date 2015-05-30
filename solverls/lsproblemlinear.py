@@ -1,7 +1,7 @@
 import numpy
 
 from solverls.lsproblem import LSProblem
-from solverls.speclib import conj_grad_elem, conj_grad
+from solverls.spectral import conj_grad_elem, conj_grad
 
 
 __author__ = 'Alfredo Carella'

@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 import numpy
 import pylab
 
-from solverls.speclib import lagrange_interpolating_matrix
+from solverls.spectral import lagrange_interpolating_matrix
 
 
 class LSProblem:

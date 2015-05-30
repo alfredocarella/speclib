@@ -1,6 +1,6 @@
 import numpy
 
-from solverls.speclib import conj_grad_elem
+from solverls.spectral import conj_grad_elem
 
 
 __author__ = 'Alfredo Carella'

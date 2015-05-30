@@ -1,5 +1,7 @@
 import math
+
 import numpy
+
 
 __author__ = 'Alfredo Carella'
 

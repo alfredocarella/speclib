@@ -1,5 +1,7 @@
-from solverls.speclib import lagrange_derivative_matrix_gll, gll
 import numpy
+
+from solverls.spectral import lagrange_derivative_matrix_gll, gll
+
 
 __author__ = 'Alfredo Carella'
 
