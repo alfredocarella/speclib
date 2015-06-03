@@ -1,13 +1,12 @@
-from nose.tools import *
+import nose
 import numpy
 
 from solverls import spectral
 
-
 __author__ = 'Alfredo Carella'
 
 
-class TestSpectralLibrary(unittest.TestCase):
+class TestSpectralLibrary:
 
     def setUp(self):
         self.list_of_orders = list(range(2, 7))
@@ -17,30 +16,25 @@ class TestSpectralLibrary(unittest.TestCase):
         del self.list_of_orders
         del self.list_of_element_boundaries
 
-    def number_of_points_and_boundary_coordinates(self):
+    def generate_set_of_gll_points_and_weights(self):
         for order in self.list_of_orders:
             for (x_min, x_max) in self.list_of_element_boundaries:
-                yield order + 1, (x_min, x_max)
+                yield spectral.gll(order + 1, x_min, x_max)
 
     def test_gll(self):
-        for number_of_points, (x_min, x_max) in self.number_of_points_and_boundary_coordinates():
-            points, weights = spectral.gll(number_of_points, x_min, x_max)
-            self.assertEqual(points[0], x_min)
-            self.assertEqual(points[-1], x_max)
-            assert_almost_equal(numpy.sum(weights), x_max - x_min)  # int(1)^{x_max}_{x_min}
-            assert_almost_equal(weights.dot(points), (x_max**2 - x_min**2)/2.0)  # int(x)^{x_max}_{x_min}
+        for points, weights in self.generate_set_of_gll_points_and_weights():
+            nose.tools.assert_almost_equal(numpy.sum(weights), points[-1] - points[0], msg="int(1)^{x_max}_{x_min} == x_max - x_min")
+            nose.tools.assert_almost_equal(weights.dot(points), (points[-1]**2 - points[0]**2)/2.0, msg="int(x)^{x_max}_{x_min} == (x_max^2 - x_min^2)/2")
 
     def test_lagrange_derivative_matrix_gll(self):
-        for number_of_points, (x_min, x_max) in self.number_of_points_and_boundary_coordinates():
-            points, weights = spectral.gll(number_of_points, x_min, x_max)
-            dx = spectral.lagrange_derivative_matrix_gll(number_of_points) * 2.0 / (x_max - x_min)
-            numpy.testing.assert_allclose(dx.dot(points), numpy.ones(number_of_points))  # d/dx(x)
+        for points, weights in self.generate_set_of_gll_points_and_weights():
+            dx = spectral.lagrange_derivative_matrix_gll(len(points)) * 2.0 / (points[-1] - points[0])
+            numpy.testing.assert_allclose(dx.dot(points), numpy.ones(len(points)), err_msg="d/dx(x) == 1")
 
     def test_lagrange_interpolating_matrix(self):
-        for number_of_points, (x_min, x_max) in self.number_of_points_and_boundary_coordinates():
-            points, weights = spectral.gll(number_of_points, x_min, x_max)
+        for points, weights in self.generate_set_of_gll_points_and_weights():
             for plot_resolution in [7, 12, 23]:
-                plot_points = numpy.linspace(x_min, x_max, plot_resolution)
+                plot_points = numpy.linspace(points[-1], points[0], plot_resolution)
                 l = spectral.lagrange_interpolating_matrix(points, plot_points)
                 dx_matrix = spectral.lagrange_derivative_matrix_gll(len(points)) * 2.0 / (points[-1] - points[0])
                 dx_in = dx_matrix.dot(points)
