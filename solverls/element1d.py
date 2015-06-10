@@ -1,6 +1,6 @@
 import numpy
 
-from solverls.spectral import lagrange_derivative_matrix_gll, gll
+from solverls.spectral import gll_derivative_matrix, gll
 
 
 __author__ = 'Alfredo Carella'
@@ -22,7 +22,7 @@ class Element1D():
         self.x_nv = numpy.tile(self.x_1v, len(variables))
         # Differentiation
         self.jac = (self.boundaries['x'][1] - self.boundaries['x'][0]) / 2.0
-        self.dx = lagrange_derivative_matrix_gll(self.order + 1) / self.jac
+        self.dx = gll_derivative_matrix(self.order + 1) / self.jac
 
     def create_variable_indices(self):
         pos = {}

@@ -23,7 +23,7 @@ def test_element1d():
     numpy.testing.assert_array_equal(my_element.w_nv, numpy.tile(spectral.gll(4, 2, 3)[1], 2))
     # Test differentiation
     assert_equal(my_element.jac, 1/2.0)
-    numpy.testing.assert_array_equal(my_element.dx, spectral.lagrange_derivative_matrix_gll(4) * 2)
+    numpy.testing.assert_array_equal(my_element.dx, spectral.gll_derivative_matrix(4) * 2)
 
 
 # class TestElement1d:

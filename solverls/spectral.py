@@ -97,78 +97,80 @@ def conj_grad(a, b, tol=1.0e-12):
     return x, cg_iteration
 
 
-def gauss_legendre(np):
+#Fixme: change entry parameter to "order" (order = np - 1)
+def gl(np):
     """
     Returns a tuple of lists with points and weights for the Gauss Legendre quadrature for the interval [-1, 1].
                    
     Syntax: p, w = gauss_legendre(np)
-    np = number of points
+    order = quadrature order
     p = quadrature points
     w = quadrature weight
     """
 
+    order = np - 1
+
     # This part finds the A-matrix
-    a = numpy.zeros((np, np))
+    a = numpy.zeros((order + 1, order + 1))
     a[0, 1] = 1.0
 
-    if np > 2:
-        for i in range(1, np-1):
+    if order > 1:
+        for i in range(1, order):
             a[i, i-1] = i / (2.0*i + 1.0)
             a[i, i+1] = (i+1) / (2.0*i + 1.0)
     else:
         pass
 
-    a[np-1, np-2] = (np-1.0)/(2.0*np-1.0)
+    a[order, order - 1] = order / (2.0 * order + 1.0)
 
     # The array of the sorted eigenvalues/zeros
     p = numpy.sort(numpy.linalg.eigvals(a))
 
     # This loop finds the associated weights
-    w = numpy.zeros(np)
-    for j in range(0, np):
-        w[j] = 2.0/((1 - p[j]**2.0) * (legendre_derivative(np, p[j]))**2.0)
+    w = numpy.zeros(order + 1)
+    for j in range(0, order + 1):
+        w[j] = 2.0/((1 - p[j]**2.0) * (legendre_derivative(order + 1, p[j]))**2.0)
     return p, w
 
 
-def gll(number_of_points, x_min=-1.0, x_max=1.0, tol=1e-14):
+#Fixme: change entry parameter to "order" (order = np - 1)
+def gll(np, x_min=-1.0, x_max=1.0, tol=1e-14):
     """
     Returns a tuple of lists with points and weights for the Gauss Lobatto Legendre quadrature for the interval
     [x_min, x_max].
 
     Syntax: p, w = gll(np, x_min, x_max)
-    np = number of points
+    order = quadrature order
     x_min = left interval boundary
     x_max = right interval boundary
     p = quadrature points
     w = quadrature weight
     """
 
-    max_order = number_of_points-1
-    quad_points = numpy.zeros(number_of_points)
+    order = np-1
+    quad_points, quad_weights = numpy.zeros(order + 1), numpy.zeros(order + 1)
     quad_points[0], quad_points[-1] = -1.0, 1.0
 
-    quad_weights = numpy.zeros(number_of_points)
-
-    if number_of_points > 3:
+    if order > 2:
         # These points are needed as start (seed) values for the Newton iteration
-        gl_points, gl_weights = gauss_legendre(max_order)
-        start_values = numpy.zeros(number_of_points)
-        start_values[1:max_order] = (gl_points[0:max_order-1] + gl_points[1:max_order]) / 2.0
+        gl_points, gl_weights = gl(order)
+        start_values = numpy.zeros(order + 1)
+        start_values[1:order] = (gl_points[0:order-1] + gl_points[1:order]) / 2.0
 
         # This loop executes the Newton-iteration to find the GLL points
-        for i in range(1, max_order):
+        for i in range(1, order):
             quad_points[i] = start_values[i]
             p_old = 0.0
             while abs(quad_points[i] - p_old) > tol:
                 p_old = quad_points[i]
-                l = legendre_polynomial(max_order, p_old)
-                dl = legendre_derivative(max_order, p_old)
-                quad_points[i] = p_old + ((1.0 - p_old ** 2.0) * dl) / (max_order * number_of_points * l)
+                l = legendre_polynomial(order, p_old)
+                dl = legendre_derivative(order, p_old)
+                quad_points[i] = p_old + ((1.0 - p_old ** 2.0) * dl) / (order * (order + 1) * l)
 
     # This loop finds the associated weights
-    for i in range(number_of_points):
-        l = legendre_polynomial(max_order, quad_points[i])
-        quad_weights[i] = 2.0 / (max_order * number_of_points * l ** 2.0)
+    for i in range(order + 1):
+        l = legendre_polynomial(order, quad_points[i])
+        quad_weights[i] = 2.0 / (order * (order + 1) * l ** 2.0)
 
     # Mapping [-1,1] -> [x_min, x_max]
     if (x_min is not None) and (x_max is not None):
@@ -179,36 +181,38 @@ def gll(number_of_points, x_min=-1.0, x_max=1.0, tol=1e-14):
     return quad_points, quad_weights
 
 
-def lagrange_derivative_matrix_gll(np):
+#Fixme: change entry parameter to "order" (order = np - 1)
+def gll_derivative_matrix(np):
     """
     Returns a matrix containing the values of the derivatives of the Lagrange polynomials l'_j evaluated at the GLL
     quadrature points x_i of order np-1, where [-1 <= x_i <= 1]. The obtained matrix (numpy.ndarray) is defined as:
     D_{ij} = l'_j(x_i) for i,j = 0:np-1
                    
-    Syntax: D = lagrange_derivative_matrix_gll(np, x)
-    np = number of points
+    Syntax: D = lagrange_derivative_matrix_gll(order, x)
+    order = quadrature order
     """
+    order = np - 1
 
-    gll_derivative_matrix = numpy.zeros((np, np))
-    points, weights = gll(np)
+    gll_derivative_matrix = numpy.zeros((order + 1, order + 1))
+    points, weights = gll(order + 1)
 
-    for i in range(np):
-        for j in range(np):
+    for i in range(order + 1):
+        for j in range(order + 1):
 
             if i == j:
                 pass    # D[i,j]=0 for the main diagonal
             else:
                 # Eq. 4.34 in "DeMaerschalck2003"
-                gll_derivative_matrix[i, j] = legendre_polynomial(np-1, points[i]) / \
-                    (legendre_polynomial(np-1, points[j]) * (points[i] - points[j]))
+                gll_derivative_matrix[i, j] = legendre_polynomial(order, points[i]) / \
+                    (legendre_polynomial(order, points[j]) * (points[i] - points[j]))
 
-    gll_derivative_matrix[0, 0] = -np * (np-1) / 4.0
-    gll_derivative_matrix[np-1, np-1] = np * (np-1) / 4.0
+    gll_derivative_matrix[0, 0] = -1.0 * order * (order + 1) / 4.0
+    gll_derivative_matrix[order, order] = order * (order + 1) / 4.0
 
     return gll_derivative_matrix
 
 
-def lagrange_interpolating_matrix(x_in, x_out):
+def interpolant_evaluation_matrix(x_in, x_out):
     """
     Returns a matrix 'L' that yields 'f(x_out) = L f(x_in)' via Lagrange interpolation.
     """

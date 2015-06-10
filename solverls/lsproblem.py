@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 import numpy
 import pylab
 
-from solverls.spectral import lagrange_interpolating_matrix
+from solverls.spectral import interpolant_evaluation_matrix
 
 
 class LSProblem:
@@ -58,7 +58,7 @@ class LSProblem:
                 plt.plot(x_in, y_in, '.', markersize=8.0, color='g')
 
                 x_out = numpy.linspace(el.boundaries['x'][0], el.boundaries['x'][1], 20)
-                y_out = lagrange_interpolating_matrix(x_in, x_out).dot(y_in)
+                y_out = interpolant_evaluation_matrix(x_in, x_out).dot(y_in)
                 plt.plot(x_out, y_out, '-', linewidth=2.0, color='b')
 
         if filename is not None:
