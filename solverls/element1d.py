@@ -17,12 +17,12 @@ class Element1D():
         self.pos = self.create_variable_indices()
         # Geometry
         self.boundaries = {'x': boundaries}
-        self.x_1v, self.w_1v = gll(self.order + 1, self.boundaries['x'][0], self.boundaries['x'][1])
+        self.x_1v, self.w_1v = gll(self.order, self.boundaries['x'][0], self.boundaries['x'][1])
         self.w_nv = numpy.tile(self.w_1v, len(variables))
         self.x_nv = numpy.tile(self.x_1v, len(variables))
         # Differentiation
         self.jac = (self.boundaries['x'][1] - self.boundaries['x'][0]) / 2.0
-        self.dx = gll_derivative_matrix(self.order + 1) / self.jac
+        self.dx = gll_derivative_matrix(self.order) / self.jac
 
     def create_variable_indices(self):
         pos = {}

@@ -21,7 +21,7 @@ class TestSpectralLibrary:
     def generate_set_of_gll_points_and_weights(self):
         for order in self.list_of_orders:
             for (x_min, x_max) in self.list_of_segment_boundaries:
-                yield spectral.gll(order + 1, x_min, x_max)
+                yield spectral.gll(order, x_min, x_max)
 
     def test_gll(self):
         for points, weights in self.generate_set_of_gll_points_and_weights():
@@ -31,7 +31,7 @@ class TestSpectralLibrary:
     def test_lagrange_derivative_matrix_gll(self):
         for points, weights in self.generate_set_of_gll_points_and_weights():
             jacobian = 2.0 / (points[-1] - points[0])
-            dx = spectral.gll_derivative_matrix(len(points)) * jacobian
+            dx = spectral.gll_derivative_matrix(len(points) - 1) * jacobian
             numpy.testing.assert_allclose(dx.dot(points), numpy.ones(len(points)), err_msg="d/dx(x) != 1")
             numpy.testing.assert_almost_equal(dx.dot(points**2.0), 2.0 * points, decimal=10, err_msg="d/dx(x^2) != x")
 
@@ -40,7 +40,7 @@ class TestSpectralLibrary:
             for plot_resolution in [7, 12, 23]:
                 plot_points = numpy.linspace(points[-1], points[0], plot_resolution)
                 l = spectral.interpolant_evaluation_matrix(points, plot_points)
-                dx_matrix = spectral.gll_derivative_matrix(len(points)) * 2.0 / (points[-1] - points[0])
+                dx_matrix = spectral.gll_derivative_matrix(len(points) - 1) * 2.0 / (points[-1] - points[0])
                 dx_in = dx_matrix.dot(points)
                 numpy.testing.assert_allclose(l.dot(dx_in), numpy.ones(len(plot_points)))
                 numpy.testing.assert_allclose(l.dot(points), plot_points)

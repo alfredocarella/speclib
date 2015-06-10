@@ -97,8 +97,7 @@ def conj_grad(a, b, tol=1.0e-12):
     return x, cg_iteration
 
 
-#Fixme: change entry parameter to "order" (order = np - 1)
-def gl(np):
+def gl(order):
     """
     Returns a tuple of lists with points and weights for the Gauss Legendre quadrature for the interval [-1, 1].
                    
@@ -107,8 +106,6 @@ def gl(np):
     p = quadrature points
     w = quadrature weight
     """
-
-    order = np - 1
 
     # This part finds the A-matrix
     a = numpy.zeros((order + 1, order + 1))
@@ -133,8 +130,7 @@ def gl(np):
     return p, w
 
 
-#Fixme: change entry parameter to "order" (order = np - 1)
-def gll(np, x_min=-1.0, x_max=1.0, tol=1e-14):
+def gll(order, x_min=-1.0, x_max=1.0, tol=1e-14):
     """
     Returns a tuple of lists with points and weights for the Gauss Lobatto Legendre quadrature for the interval
     [x_min, x_max].
@@ -147,13 +143,12 @@ def gll(np, x_min=-1.0, x_max=1.0, tol=1e-14):
     w = quadrature weight
     """
 
-    order = np-1
     quad_points, quad_weights = numpy.zeros(order + 1), numpy.zeros(order + 1)
     quad_points[0], quad_points[-1] = -1.0, 1.0
 
     if order > 2:
         # These points are needed as start (seed) values for the Newton iteration
-        gl_points, gl_weights = gl(order)
+        gl_points, gl_weights = gl(order - 1)
         start_values = numpy.zeros(order + 1)
         start_values[1:order] = (gl_points[0:order-1] + gl_points[1:order]) / 2.0
 
@@ -181,8 +176,7 @@ def gll(np, x_min=-1.0, x_max=1.0, tol=1e-14):
     return quad_points, quad_weights
 
 
-#Fixme: change entry parameter to "order" (order = np - 1)
-def gll_derivative_matrix(np):
+def gll_derivative_matrix(order):
     """
     Returns a matrix containing the values of the derivatives of the Lagrange polynomials l'_j evaluated at the GLL
     quadrature points x_i of order np-1, where [-1 <= x_i <= 1]. The obtained matrix (numpy.ndarray) is defined as:
@@ -191,10 +185,9 @@ def gll_derivative_matrix(np):
     Syntax: D = lagrange_derivative_matrix_gll(order, x)
     order = quadrature order
     """
-    order = np - 1
 
     gll_derivative_matrix = numpy.zeros((order + 1, order + 1))
-    points, weights = gll(order + 1)
+    points, weights = gll(order)
 
     for i in range(order + 1):
         for j in range(order + 1):
