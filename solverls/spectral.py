@@ -79,7 +79,8 @@ def conj_grad(a, b, tol=1.0e-12):
 
     n = len(b)
     r = b - a.dot(x)
-    s = r.copy()
+    # s = r.copy()
+    s = r
     cg_iteration = 0
     for cg_iteration in range(n):
         u = a.dot(s)
