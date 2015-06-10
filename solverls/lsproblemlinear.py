@@ -13,7 +13,7 @@ class LSProblemLinear(LSProblem):
         for el in self.mesh.elem:
             self.set_operators(el)
         self.set_boundary_conditions()
-        self.f, cg_iterations = conj_grad_elem(self.k_el, self.g_el, self.mesh.gm, self.mesh.dof)
+        self.f, cg_iterations = conj_grad_elem(self.k_el, self.g_el, self.mesh.gm)
         self.residual = sum(self.compute_residual(el) for el in self.mesh.elem)
 
     # TODO: The following methods should belong to another sub-class (e.g. LSProblemTimeMarching)

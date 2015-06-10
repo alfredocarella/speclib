@@ -27,7 +27,7 @@ class Iterator(object):
             problem.set_boundary_conditions()
             problem.f_old = problem.f.copy()
 
-            problem.f, num_cg_it = conj_grad_elem(problem.k_el, problem.g_el, problem.mesh.gm, problem.mesh.dof)
+            problem.f, num_cg_it = conj_grad_elem(problem.k_el, problem.g_el, problem.mesh.gm)
             self.solution_iterations += 1
 
             problem.residual = 0

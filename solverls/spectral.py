@@ -8,10 +8,9 @@ __author__ = 'Alfredo Carella'
 # ********************************************************** #
 # ********************** LIBRARY CODE ********************** #
 # ********************************************************** #
-#TODO: Remove 'dof' parameter from conj_grad_elem(...), it can be calculated from 'gm'
 
 
-def conj_grad_elem(k_elem, g_elem, gm, dof, tol=1.0e-12):
+def conj_grad_elem(k_elem, g_elem, gm, tol=1.0e-12):
     """
     Attempts to solve the linear system Ax=b. The SPD matrix A should be sparse.
     Matrices resulting from a finite-element problem are only filled across squared blocks on its main diagonal.
@@ -27,8 +26,12 @@ def conj_grad_elem(k_elem, g_elem, gm, dof, tol=1.0e-12):
     <numpy.array>    x = initial iteration value for solution (default is zeros)
     """
 
-    x = numpy.zeros(dof)
+    dof = 0
     number_of_elements = len(gm)
+    for el in range(number_of_elements):
+        dof += len(gm[el])
+
+    x = numpy.zeros(dof)
     r = numpy.zeros(dof)
 
     # r = loc2gbl(Ge, gm, dof) - loc2gblMatrixVector(Ke, gbl2loc(x, gm), gm, dof)
