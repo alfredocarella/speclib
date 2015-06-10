@@ -1,0 +1,6 @@
+# IDE project files
+.idea
+
+# Other non-source files
+output
+__pycache__*
