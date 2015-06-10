@@ -228,7 +228,7 @@ def lagrange_interpolating_matrix(x_in, x_out):
     return interpolating_matrix    # Interpolating matrix
 
 
-def legendre_derivative(n, x):
+def legendre_derivative(order, x):
     """
     Returns the the value of the derivative of the n_th Legendre polynomial evaluated at the coordinate x. The input
     'x' can be a vector of points.
@@ -237,37 +237,32 @@ def legendre_derivative(n, x):
     x = coordinate -1 =< x =< 1
     """
 
-    lagrange_polynomial = numpy.zeros(n+1)
-    lagrange_polynomial[0] = 1.0
-    lagrange_polynomial[1] = x
-
     if x == -1 or x == 1:
-        lagrange_derivative = x**(n-1.0) * (1.0/2.0) * n * (n+1.0)
+        legendre_deriv = x**(order-1.0) * (1.0/2.0) * order * (order+1.0)
     else:
         # Recurrence 4.5.10 in 'Press1993.pdf'
-        for i in range(1, n):
-            lagrange_polynomial[i+1] = (2.0*i+1)/(i+1.0)*x*lagrange_polynomial[i] - i/(i+1.0)*lagrange_polynomial[i-1]
-        lagrange_derivative = n/(1.0-x**2.0)*lagrange_polynomial[n-1] - n*x/(1.0-x**2.0)*lagrange_polynomial[n]
+        mult_factor = order / (1.0 - x ** 2.0)
+        legendre_deriv = mult_factor * legendre_polynomial(order-1, x) - mult_factor * x * legendre_polynomial(order, x)
 
-    return lagrange_derivative
+    return legendre_deriv
 
 
-def legendre_polynomial(n, x):
+def legendre_polynomial(order, x):
     """
     Returns the value of the n_th Legendre polynomial evaluated at the coordinate 'x'. The input 'x' can be a vector
     of points.
 
-    n = polynomial order 0,1,...
+    order = polynomial order >= 0
     x = coordinate -1 =< x =< 1
     """
 
-    lagrange_poly = numpy.zeros((n+1, len(numpy.atleast_1d(x))))
-    lagrange_poly[0, :] = 1.0
-    lagrange_poly[1, :] = x
+    legendre_poly = numpy.zeros((order+1, len(numpy.atleast_1d(x))))
+    legendre_poly[0, :] = 1.0
+    legendre_poly[1, :] = x
 
     # Recurrence 4.5.10 in 'Press1993.pdf'
-    if n > 1:
-        for i in range(1, n):
-            lagrange_poly[i+1, :] = ((2.0*i+1.0) / (i+1.0)*x) * lagrange_poly[i, :] - i / (i+1.0)*lagrange_poly[i-1, :]
+    if order > 1:
+        for i in range(1, order):
+            legendre_poly[i+1, :] = ((2.0*i+1.0) / (i+1.0)*x) * legendre_poly[i, :] - i / (i+1.0)*legendre_poly[i-1, :]
 
-    return lagrange_poly[n, :]
+    return legendre_poly[order, :]
