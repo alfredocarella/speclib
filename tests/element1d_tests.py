@@ -8,22 +8,24 @@ __author__ = 'Alfredo Carella'
 
 
 def test_element1d():
-    varlist=['var_1', 'var_2']
-    my_element = Element1D(boundaries=[2, 3], order=3, variables=varlist)
-    # assert_equal(Element1D.get_num_instances(), 1)
+    boundaries = [2, 3]
+    order = 3
+    var_list = ['var_1', 'var_2', 'var_3']
+    my_element = Element1D(boundaries, order, var_list)
     # Test numbering
-    assert_equal(my_element.variables, varlist)
-    assert_equal(my_element.order, 3)
-    numpy.testing.assert_array_equal(my_element.pos['var_2'], [4, 5, 6, 7])
+    assert_equal(my_element.variables, var_list)
+    assert_equal(my_element.order, order)
+    for idx, var in enumerate(var_list):
+        numpy.testing.assert_array_equal(my_element.pos[var], range(idx*(order+1), (idx+1)*(order+1)))
     # Test geometry
-    assert_equal(my_element.boundaries['x'], [2.0, 3.0])
-    numpy.testing.assert_array_equal(my_element.x_1v, spectral.gll(3, 2, 3)[0])
-    numpy.testing.assert_array_equal(my_element.w_1v, spectral.gll(3, 2, 3)[1])
-    numpy.testing.assert_array_equal(my_element.x_nv, numpy.tile(spectral.gll(3, 2, 3)[0], 2))
-    numpy.testing.assert_array_equal(my_element.w_nv, numpy.tile(spectral.gll(3, 2, 3)[1], 2))
+    assert_equal(my_element.boundaries['x'], boundaries)
+    numpy.testing.assert_array_equal(my_element.x_1v, spectral.gll(order, boundaries[0], boundaries[1])[0])
+    numpy.testing.assert_array_equal(my_element.w_1v, spectral.gll(order, boundaries[0], boundaries[1])[1])
+    numpy.testing.assert_array_equal(my_element.x_nv, numpy.tile(my_element.x_1v, len(var_list)))
+    numpy.testing.assert_array_equal(my_element.w_nv, numpy.tile(my_element.w_1v, len(var_list)))
     # Test differentiation
-    assert_equal(my_element.jac, 1/2.0)
-    numpy.testing.assert_array_equal(my_element.dx, spectral.gll_derivative_matrix(3) * 2)
+    assert_equal(my_element.jac, (boundaries[1] - boundaries[0]) / 2.0)
+    numpy.testing.assert_array_equal(my_element.dx, spectral.gll_derivative_matrix(order) / my_element.jac)
 
 
 # class TestElement1d:
