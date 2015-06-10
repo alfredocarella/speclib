@@ -18,20 +18,19 @@ def conj_grad_elem(k_elem, g_elem, gm, tol=1.0e-12):
     vector b.
                    
     Syntax: x = conjGradElem(Ke, Ge, gm, dof, x=None, TOL=1.0e-9)
-    Ke = list of dof-by-dof <numpy.ndarray> matrices (must be SPD)
-    Ge = a list of dof-length <numpy.array> vectors
-    gm = a list of the nodes belonging to each element
-    dof = degrees of freedom of the full system of equations
-    <numpy.array>    x = initial iteration value for solution (default is zeros)
+    Ke = list of coefficient matrices (must be SPD, and should as well be sparse)
+    Ge = a list of coefficient vectors
+    gm = a gathering matrix specifying which nodes belong to each element
+    x = initial iteration value for solution (the default iteration seed is the zero vector)
     """
 
-    dof = 0
+    degrees_of_freedom = 0
     number_of_elements = len(gm)
     for el in range(number_of_elements):
-        dof += len(gm[el])
+        degrees_of_freedom += len(gm[el])
 
-    x = numpy.zeros(dof)
-    r = numpy.zeros(dof)
+    x = numpy.zeros(degrees_of_freedom)
+    r = numpy.zeros(degrees_of_freedom)
 
     # r = loc2gbl(Ge, gm, dof) - loc2gblMatrixVector(Ke, gbl2loc(x, gm), gm, dof)
     for el_ in range(number_of_elements):
@@ -43,8 +42,8 @@ def conj_grad_elem(k_elem, g_elem, gm, tol=1.0e-12):
     s = r
     cg_iteration = 0
 
-    for cg_iteration in range(dof):
-        u = numpy.zeros(dof)
+    for cg_iteration in range(degrees_of_freedom):
+        u = numpy.zeros(degrees_of_freedom)
         for el_ in range(number_of_elements):
             r_elem = k_elem[el_].dot(s[gm[el_]])
             local_index = numpy.arange(len(gm[el_]))
@@ -53,7 +52,7 @@ def conj_grad_elem(k_elem, g_elem, gm, tol=1.0e-12):
         alpha = s.dot(r) / s.dot(u)
         x = x + alpha * s
 
-        r = numpy.zeros(dof)
+        r = numpy.zeros(degrees_of_freedom)
         for el_ in range(number_of_elements):
             mat_vec_local_product = k_elem[el_].dot(x[gm[el_]])
             local_index = numpy.arange(len(gm[el_]))
@@ -74,7 +73,7 @@ def conj_grad(a, b, tol=1.0e-12):
                    
     a = n-by-n matrix (must be SPD)
     b = n-length vector
-    x = initial iteration value for solution (default is zeros)
+    x = initial iteration value for solution (the default correspond to the zero vector)
     """
 
     x = numpy.zeros(len(b))
@@ -99,37 +98,53 @@ def conj_grad(a, b, tol=1.0e-12):
     return x, cg_iteration
 
 
-def gl(order):
+def interpolant_evaluation_matrix(x_in, x_out):
     """
-    Returns a tuple of lists with points and weights for the Gauss Legendre quadrature for the interval [-1, 1].
+    Returns a matrix 'L' that yields 'f(x_out) = L f(x_in)' via Lagrange interpolation.
+    """
+
+    input_length = len(x_in)
+    output_length = len(x_out)
+    interpolating_matrix = numpy.ones((output_length, input_length))
+    # % Sub-index i_basis goes with the interpolating basis
+    # % Sub-index k_coord goes with (x) the evaluation coordinate
+    for i_basis in range(input_length):    # interpolating basis
+        for j_basis in range(input_length):    # evaluation coordinates
+            if i_basis != j_basis:
+                for k_coord in range(output_length):
+                    interpolating_matrix[k_coord, i_basis] *= (x_out[k_coord] - x_in[j_basis]) / \
+                                                              (x_in[i_basis] - x_in[j_basis])
+
+    return interpolating_matrix    # Interpolating matrix
+
+
+def gll_derivative_matrix(order):
+    """
+    Returns a matrix containing the values of the derivatives of the Lagrange polynomials l'_j evaluated at the GLL
+    quadrature points x_i of order np-1, where [-1 <= x_i <= 1]. The obtained matrix (numpy.ndarray) is defined as:
+    D_{ij} = l'_j(x_i) for i,j = 0:np-1
                    
-    Syntax: p, w = gauss_legendre(np)
+    Syntax: D = lagrange_derivative_matrix_gll(order, x)
     order = quadrature order
-    p = quadrature points
-    w = quadrature weight
     """
 
-    # This part finds the A-matrix
-    a = numpy.zeros((order + 1, order + 1))
-    a[0, 1] = 1.0
+    gll_derivative_matrix = numpy.zeros((order + 1, order + 1))
+    points, weights = gll(order)
 
-    if order > 1:
-        for i in range(1, order):
-            a[i, i-1] = i / (2.0*i + 1.0)
-            a[i, i+1] = (i+1) / (2.0*i + 1.0)
-    else:
-        pass
+    for i in range(order + 1):
+        for j in range(order + 1):
 
-    a[order, order - 1] = order / (2.0 * order + 1.0)
+            if i == j:
+                pass    # D[i,j]=0 for the main diagonal
+            else:
+                # Eq. 4.34 in "DeMaerschalck2003"
+                gll_derivative_matrix[i, j] = legendre_polynomial(order, points[i]) / \
+                    (legendre_polynomial(order, points[j]) * (points[i] - points[j]))
 
-    # The array of the sorted eigenvalues/zeros
-    p = numpy.sort(numpy.linalg.eigvals(a))
+    gll_derivative_matrix[0, 0] = -1.0 * order * (order + 1) / 4.0
+    gll_derivative_matrix[order, order] = order * (order + 1) / 4.0
 
-    # This loop finds the associated weights
-    w = numpy.zeros(order + 1)
-    for j in range(0, order + 1):
-        w[j] = 2.0/((1 - p[j]**2.0) * (legendre_derivative(order + 1, p[j]))**2.0)
-    return p, w
+    return gll_derivative_matrix
 
 
 def gll(order, x_min=-1.0, x_max=1.0, tol=1e-14):
@@ -178,53 +193,37 @@ def gll(order, x_min=-1.0, x_max=1.0, tol=1e-14):
     return quad_points, quad_weights
 
 
-def gll_derivative_matrix(order):
+def gl(order):
     """
-    Returns a matrix containing the values of the derivatives of the Lagrange polynomials l'_j evaluated at the GLL
-    quadrature points x_i of order np-1, where [-1 <= x_i <= 1]. The obtained matrix (numpy.ndarray) is defined as:
-    D_{ij} = l'_j(x_i) for i,j = 0:np-1
-                   
-    Syntax: D = lagrange_derivative_matrix_gll(order, x)
+    Returns a tuple of lists with points and weights for the Gauss Legendre quadrature for the interval [-1, 1].
+
+    Syntax: p, w = gauss_legendre(np)
     order = quadrature order
+    p = quadrature points
+    w = quadrature weight
     """
 
-    gll_derivative_matrix = numpy.zeros((order + 1, order + 1))
-    points, weights = gll(order)
+    # This part finds the A-matrix
+    a = numpy.zeros((order + 1, order + 1))
+    a[0, 1] = 1.0
 
-    for i in range(order + 1):
-        for j in range(order + 1):
+    if order > 1:
+        for i in range(1, order):
+            a[i, i-1] = i / (2.0*i + 1.0)
+            a[i, i+1] = (i+1) / (2.0*i + 1.0)
+    else:
+        pass
 
-            if i == j:
-                pass    # D[i,j]=0 for the main diagonal
-            else:
-                # Eq. 4.34 in "DeMaerschalck2003"
-                gll_derivative_matrix[i, j] = legendre_polynomial(order, points[i]) / \
-                    (legendre_polynomial(order, points[j]) * (points[i] - points[j]))
+    a[order, order - 1] = order / (2.0 * order + 1.0)
 
-    gll_derivative_matrix[0, 0] = -1.0 * order * (order + 1) / 4.0
-    gll_derivative_matrix[order, order] = order * (order + 1) / 4.0
+    # The array of the sorted eigenvalues/zeros
+    p = numpy.sort(numpy.linalg.eigvals(a))
 
-    return gll_derivative_matrix
-
-
-def interpolant_evaluation_matrix(x_in, x_out):
-    """
-    Returns a matrix 'L' that yields 'f(x_out) = L f(x_in)' via Lagrange interpolation.
-    """
-
-    input_length = len(x_in)
-    output_length = len(x_out)
-    interpolating_matrix = numpy.ones((output_length, input_length))
-    # % Sub-index i_basis goes with the interpolating basis
-    # % Sub-index k_coord goes with (x) the evaluation coordinate
-    for i_basis in range(input_length):    # interpolating basis
-        for j_basis in range(input_length):    # evaluation coordinates
-            if i_basis != j_basis:
-                for k_coord in range(output_length):
-                    interpolating_matrix[k_coord, i_basis] *= (x_out[k_coord] - x_in[j_basis]) / \
-                                                              (x_in[i_basis] - x_in[j_basis])
-
-    return interpolating_matrix    # Interpolating matrix
+    # This loop finds the associated weights
+    w = numpy.zeros(order + 1)
+    for j in range(0, order + 1):
+        w[j] = 2.0/((1 - p[j]**2.0) * (legendre_derivative(order + 1, p[j]))**2.0)
+    return p, w
 
 
 def legendre_derivative(order, x):
