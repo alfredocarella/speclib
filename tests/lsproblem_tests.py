@@ -4,7 +4,6 @@ import numpy
 from solverls.lsproblemlinear import LSProblemLinear
 from solverls.mesh1d import Mesh1D
 
-
 __author__ = 'Alfredo Carella'
 
 
@@ -43,7 +42,7 @@ def test_problem_nel_nv():
     my_problem.solve()
     assert_almost_equal(my_problem.residual, 0.0)
 
-    my_problem.plot(['f', 'g'], 'testingProblemNelNv.pdf')
+    # my_problem.plot(['f', 'g'], 'testingProblemNelNv.pdf') #FIXME: Commented to avoid plotting during test execution
 
     print("The residual for this problem is %04.2e" % my_problem.residual)
 
@@ -59,7 +58,7 @@ def test_problem_torsional_1v():
     my_problem.solve_linear_slab()
     assert_almost_equal(my_problem.residual, 0.0, 6)
 
-    my_problem.plot()  # filename='testingProblemTorsional1v.pdf')
+    # my_problem.plot()  # filename='testingProblemTorsional1v.pdf' #FIXME: Commented to avoid plotting during test execution
 
     print("The residual for this problem is %04.2e" % my_problem.residual)
 
@@ -81,7 +80,7 @@ def test_problem_torsional_nv():
     my_problem.solve_linear_slab()
     # assert_almost_equal(my_problem.residual, 0.0, 6)
 
-    my_problem.plot()  # filename='testingProblemTorsionalNv.pdf')
+    # my_problem.plot()  # filename='testingProblemTorsionalNv.pdf') #FIXME: Commented to avoid plotting during test execution
 
     print("The residual for this problem is %04.2e" % my_problem.residual)
 

@@ -9,15 +9,12 @@ __author__ = 'Alfredo Carella'
 class Element1D():
     """Spectral (high order) 1D element. One of the elementary blocks that compose a mesh (and a mesh object)"""
 
-    number_of_instances = 0 # FIXME: static instance counter not working as intended
-
-    def __init__(self, boundaries, order, variables):
-        Element1D.number_of_instances += 1
+    def __init__(self, boundaries, order, variables, number=-1):
         # Numbering
-        # self.number = Element1D.number_of_instances - 1
+        self.number = number
         self.variables = variables
         self.order = order
-        self.pos = self.create_local_variable_indices()
+        self.pos = self.create_variable_indices()
         # Geometry
         self.boundaries = {'x': boundaries}
         self.x_1v, self.w_1v = gll(self.order + 1, self.boundaries['x'][0], self.boundaries['x'][1])
@@ -27,19 +24,16 @@ class Element1D():
         self.jac = (self.boundaries['x'][1] - self.boundaries['x'][0]) / 2.0
         self.dx = lagrange_derivative_matrix_gll(self.order + 1) / self.jac
 
-    def create_local_variable_indices(self):
+    def create_variable_indices(self):
         pos = {}
         dof_local = (self.order + 1)
-        for var_ in range(len(self.variables)):
-            pos[self.variables[var_]] = numpy.arange(var_ * dof_local, (var_ + 1) * dof_local)
+        for idx, var in enumerate(self.variables):
+            pos[var] = numpy.arange(idx * dof_local, (idx + 1) * dof_local)
         return pos
 
     def plot(self):
         raise NotImplementedError("Child classes must implement this method.")
 
-    @staticmethod
-    def get_num_instances():
-        return Element1D.number_of_instances
 
 if __name__ == '__main__':
     def minimum_working_example():
