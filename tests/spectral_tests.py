@@ -1,3 +1,5 @@
+import itertools
+
 import nose
 import numpy
 
@@ -7,16 +9,11 @@ __author__ = 'Alfredo Carella'
 
 
 def test_spectral():
-    tested_orders = list(range(2, 7))
+    tested_orders = range(2, 7)
     tested_boundaries = [(-1, 1), (2, 5), (-6, -4), (-3, 1)]
-    for points, weights in generate_gll_quadrature(tested_orders, tested_boundaries):
+    for order, (x_min, x_max) in itertools.product(*[tested_orders, tested_boundaries]):
+        points, weights = spectral.gll(order, x_min, x_max)
         yield check_all_quadrature_functions, points, weights
-
-
-def generate_gll_quadrature(list_of_orders, list_of_segment_boundaries):
-    for order in list_of_orders:
-        for (x_min, x_max) in list_of_segment_boundaries:
-            yield spectral.gll(order, x_min, x_max)
 
 
 def check_all_quadrature_functions(points, weights):
