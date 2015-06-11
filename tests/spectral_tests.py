@@ -8,7 +8,7 @@ from solverls import spectral
 __author__ = 'Alfredo Carella'
 
 
-def test_spectral():
+def spectral_test_case_generator():
     tested_orders = range(2, 7)
     tested_boundaries = [(-1, 1), (2, 5), (-6, -4), (-3, 1)]
     for order, (x_min, x_max) in itertools.product(*[tested_orders, tested_boundaries]):
