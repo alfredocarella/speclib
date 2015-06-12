@@ -9,10 +9,10 @@ __author__ = 'Alfredo Carella'
 
 
 def mesh1d_test_case_generator():
-    tested_macro_grids = [[-1, 1, 2, 4]]
-    tested_order_arrays = [[3, 4, 2]]
-    tested_varlists = [['Var A', 'Var B', 'Var C']]  # [['f'], ['Temperature', 'Pressure', 'Quality'], []]
-    for macro_grid, element_orders, var_list in itertools.product(*[tested_macro_grids, tested_order_arrays, tested_varlists]):
+    tested_macro_grids_and_orders = [([0, 1, 2, 3],  [2, 2, 2]),
+                                     ([-1, 1, 2, 4], [3, 4, 2])]
+    tested_varlists = [['f'], ['Var A', 'Var B', 'Var C'], []]
+    for (macro_grid, element_orders), var_list in itertools.product(*[tested_macro_grids_and_orders, tested_varlists]):
         yield check_consistency_in_mesh1d, macro_grid, element_orders, var_list
 
 
@@ -39,9 +39,8 @@ def check_consistency_in_mesh1d(macro_grid, element_orders, var_list):
                 numpy.testing.assert_array_equal(mesh_pos_1, mesh_pos_2)
         previous_var = var
 
-    domain_integral_a, domain_integral_b = 0, 0
-    for el in my_mesh1d.elem:
-        domain_integral_a += el.w_1v.dot(el.x_1v)
-        domain_integral_b += el.w_1v.dot(el.x_1v ** 2)
+    # Testing linear and quadratic integration
+    domain_integral_a = sum(el.w_1v.dot(el.x_1v) for el in my_mesh1d.elem)
+    domain_integral_b = sum(el.w_1v.dot(el.x_1v ** 2) for el in my_mesh1d.elem)
     assert_almost_equal(domain_integral_a, (my_mesh1d.macro_grid[-1]**2 - my_mesh1d.macro_grid[0]**2) / 2)
     assert_almost_equal(domain_integral_b, (my_mesh1d.macro_grid[-1]**3 - my_mesh1d.macro_grid[0]**3) / 3)
