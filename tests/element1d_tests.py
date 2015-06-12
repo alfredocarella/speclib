@@ -13,11 +13,11 @@ def element1d_test_case_generator():
     tested_orders = range(2, 7)
     tested_boundaries = [(-1, 1), (2, 5), (-6, -4), (-3, 1)]
     tested_varlists = [['f'], ['Temperature', 'Pressure', 'Quality'], []]
-    for order, boundaries, var_list in itertools.product(*[tested_orders, tested_boundaries, tested_varlists]):
-        yield check_consistency_in_element_generation, order, boundaries, var_list
+    for order, boundaries, var_list in itertools.product(tested_orders, tested_boundaries, tested_varlists):
+        yield check_consistency_in_element1d, order, boundaries, var_list
 
 
-def check_consistency_in_element_generation(order, boundaries, var_list):
+def check_consistency_in_element1d(order, boundaries, var_list):
     my_element = Element1D(boundaries, order, var_list)
     # Test numbering
     assert_equal(my_element.variables, var_list)

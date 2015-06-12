@@ -1,27 +1,43 @@
+import itertools
+
 from nose.tools import assert_equal, assert_almost_equal
 import numpy
 
 from solverls.mesh1d import Mesh1D
 
-
-# from solverls.element1d import Element1D
-
 __author__ = 'Alfredo Carella'
 
 
-def test_mesh1d():    # Testing the mesh generation (plotting is not tested here)
-    my_mesh1d = Mesh1D(macro_grid=[-1, 1, 2, 4], element_orders=[3, 4, 2], variable_names=['Var A', 'Var B', 'Var C'])
+def mesh1d_test_case_generator():
+    tested_macro_grids = [[-1, 1, 2, 4]]
+    tested_order_arrays = [[3, 4, 2]]
+    tested_varlists = [['Var A', 'Var B', 'Var C']]  # [['f'], ['Temperature', 'Pressure', 'Quality'], []]
+    for macro_grid, element_orders, var_list in itertools.product(*[tested_macro_grids, tested_order_arrays, tested_varlists]):
+        yield check_consistency_in_mesh1d, macro_grid, element_orders, var_list
+
+
+# Testing the mesh generation (plotting is not tested here)
+def check_consistency_in_mesh1d(macro_grid, element_orders, var_list):
+    my_mesh1d = Mesh1D(macro_grid, element_orders, var_list)
+
     # Testing mesh attributes
-    numpy.testing.assert_allclose(my_mesh1d.macro_grid, [-1, 1, 2, 4])
-    numpy.testing.assert_array_equal(my_mesh1d.element_orders, [3, 4, 2])
-    assert_equal(my_mesh1d.variables, ['Var A', 'Var B', 'Var C'])
-    assert_equal(my_mesh1d.dof, 30)
-    # assert_equal(Element1D.get_num_instances(), 3)  # FIXME: static instance counter still not working as intended
+    numpy.testing.assert_allclose(my_mesh1d.macro_grid, macro_grid)
+    numpy.testing.assert_array_equal(my_mesh1d.element_orders, element_orders)
+    assert_equal(my_mesh1d.variables, var_list)
+    assert_equal(my_mesh1d.dof, (sum(element_orders) + 1) * len(var_list))
+
     # Testing list of elements
-    numpy.testing.assert_array_equal(my_mesh1d.gm[0], [0, 1, 2, 3, 10, 11, 12, 13, 20, 21, 22, 23])
-    numpy.testing.assert_array_equal(my_mesh1d.gm[1], [3, 4, 5, 6, 7, 13, 14, 15, 16, 17, 23, 24, 25, 26, 27])
-    numpy.testing.assert_array_equal(my_mesh1d.gm[2], [7, 8, 9, 17, 18, 19, 27, 28, 29])
-    numpy.testing.assert_array_equal(my_mesh1d.elem[1].pos['Var B'], [5, 6, 7, 8, 9])
+    for idx_var, var in enumerate(var_list):
+        for idx_el, element in enumerate(my_mesh1d.elem):
+            if idx_var == 0:
+                mesh_pos_1 = my_mesh1d.gm[idx_el][element.pos[var]][0]
+                mesh_pos_2 = sum(my_mesh1d.elem[el].order for el in range(idx_el))
+                numpy.testing.assert_array_equal(mesh_pos_1, mesh_pos_2)
+            else:
+                mesh_pos_1 = my_mesh1d.gm[idx_el][element.pos[previous_var]] + my_mesh1d.dof_1v
+                mesh_pos_2 = my_mesh1d.gm[idx_el][element.pos[var]]
+                numpy.testing.assert_array_equal(mesh_pos_1, mesh_pos_2)
+        previous_var = var
 
     domain_integral_a, domain_integral_b = 0, 0
     for el in my_mesh1d.elem:
