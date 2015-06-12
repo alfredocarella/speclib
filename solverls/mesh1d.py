@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy
+
 from solverls.element1d import Element1D
 
 __author__ = 'Alfredo Carella'
@@ -24,21 +25,22 @@ class Mesh1D(object):
         self.gm = self.create_gm()
         # List of elements
         self.elem = []
-        for el in range(len(self.macro_grid) - 1):
-            self.elem.append(Element1D(self.macro_grid[el:el+2], self.element_orders[el], self.variables))
-            self.elem[el].number = el
-            self.elem[el].nodes = self.gm[el]
+        for idx, order in enumerate(self.element_orders):
+            self.elem.append(Element1D(self.macro_grid[idx:idx + 2], order, self.variables))
+            self.elem[idx].number = idx
+            self.elem[idx].nodes = self.gm[idx]
 
     def create_gm(self):
         gm = []
-        for el in range(len(self.element_orders)):
-            num_points = (self.element_orders[el] + 1)
+        node_count_for_first_variable = 0
+        for idx_el, order in enumerate(self.element_orders):
+            num_points = (order + 1)
             gm.append(numpy.zeros(len(self.variables) * num_points, dtype=numpy.int))
-            for var in self.variables:
-                var_index = self.variables.index(var)
-                start_number = var_index * self.dof_1v + sum(self.element_orders[range(el)])
+            for idx_var, var in enumerate(self.variables):
+                start_number = idx_var * self.dof_1v + node_count_for_first_variable
                 span = numpy.arange(num_points)
-                gm[-1][numpy.add(span, var_index * num_points)] = numpy.add(span, start_number)
+                gm[-1][numpy.add(span, idx_var * num_points)] = numpy.add(span, start_number)
+            node_count_for_first_variable += order
         return gm
 
     def plot(self):
