@@ -25,6 +25,7 @@ class LSProblem:
         for (row, col) in itertools.product(self.mesh.variables, repeat=2):
             if (row+'.'+col) in op_dict:
                 self.op_l[-1][numpy.ix_(el.pos[row], el.pos[col])] += op_dict[row + '.' + col]
+
         self.op_g.append(numpy.zeros(element_size))
         for row in self.mesh.variables:
             if row in op_dict:

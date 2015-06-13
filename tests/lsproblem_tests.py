@@ -2,6 +2,7 @@ from nose.tools import assert_almost_equal, assert_equal
 import numpy
 
 from solverls.lsproblemlinear import LSProblemLinear
+from solverls.lsproblemtimemarching import LSProblemTimeMarching
 from solverls.mesh1d import Mesh1D
 
 __author__ = 'Alfredo Carella'
@@ -139,7 +140,7 @@ class TestLSProblemLinearNelNv(LSProblemLinear):
         self.g_el[-1][-1] += weight * right_value
 
 
-class TorsionalProblemLinearTest(LSProblemLinear):
+class TorsionalProblemLinearTest(LSProblemTimeMarching):
     """Class for testing a torsional problem in N variables on N elements."""
 
     def set_equations(self, el):
@@ -174,7 +175,7 @@ class TorsionalProblemLinearTest(LSProblemLinear):
         self.g_el[0][5] += weight * initial_position
 
 
-class TorsionalProblemLinearTestNv(LSProblemLinear):
+class TorsionalProblemLinearTestNv(LSProblemTimeMarching):
     """Class for testing a torsional problem in N variables on N elements."""
     def set_equations(self, el):
         op_dict = {}
