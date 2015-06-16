@@ -34,32 +34,3 @@ def create_variable_indices(order, variables):
     for idx, var in enumerate(variables):
         pos[var] = numpy.arange(idx * dof_local, (idx + 1) * dof_local)
     return pos
-
-
-if __name__ == '__main__':
-    def minimum_working_example():
-        element_boundaries, element_order, list_of_variables = [1, 2], 3, ['f1', 'f2']
-        my_element1d = Element1D(element_boundaries, element_order, list_of_variables)
-
-        print('Test inputs:')
-        print('element_boundaries = %s' % str(element_boundaries))
-        print('element_order = %s' % str(element_order))
-        print('list_of_variables = %s' % str(list_of_variables))
-        print('')
-        print('Internal variables:')
-        print('# Numbering')
-        print('self.number = %s' % my_element1d.number)
-        print('self.variables = %s' % my_element1d.variables)
-        print('self.order = %s' % my_element1d.order)
-        print('self.pos = %s' % my_element1d.pos)
-        print('# Geometric properties')
-        print('self.boundaries = %s' % my_element1d.boundaries)
-        print('self.quadrature_points = %s' % my_element1d.x_1v)
-        print('self.quadrature_weights = %s' % my_element1d.w_1v)
-        print('self.long_quadrature_weights = %s' % my_element1d.w_nv)
-        print('self.x = %s' % my_element1d.x_nv)
-        print('#Differentiation')
-        print('self.jac = %s' % my_element1d.jac)
-        print('self.dx = \n%s' % my_element1d.dx)
-
-    minimum_working_example()
