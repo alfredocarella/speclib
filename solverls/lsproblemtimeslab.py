@@ -6,17 +6,13 @@ from solverls.spectral import conj_grad
 __author__ = 'alfredoc'
 
 
-class LSProblemTimeMarching(LSProblem):
-    def solve_linear_slab(self):
+class LSProblemTimeSlab(LSProblem):
+    def solve(self):
         self.f = numpy.zeros(self.mesh.dof)
         self.residual = 0
         for el in self.mesh.elem:
             self.set_operators(el)
-
-            if el.number > 0:
-                self.set_slab_boundary_conditions(el)
-            else:
-                self.set_boundary_conditions()
+            self.set_slab_boundary_conditions(el) if (el.number > 0) else self.set_boundary_conditions()
 
             f_elem, cg_iterations = conj_grad(self.k_el[0], self.g_el[0])
             self.f[el.nodes] = f_elem
