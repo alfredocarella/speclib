@@ -24,10 +24,12 @@ def conj_grad_elem(k_elem, g_elem, gm, tol=1.0e-12):
     x = initial iteration value for solution (the default iteration seed is the zero vector)
     """
 
-    degrees_of_freedom = 0
     number_of_elements = len(gm)
-    for el in range(number_of_elements):
-        degrees_of_freedom += len(gm[el])
+    node_list = set()
+    for el in gm:
+        for node in el:
+            node_list.add(node)
+    degrees_of_freedom = len(node_list)
 
     x = numpy.zeros(degrees_of_freedom)
     r = numpy.zeros(degrees_of_freedom)
