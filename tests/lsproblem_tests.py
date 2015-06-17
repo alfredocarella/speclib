@@ -2,7 +2,8 @@ from nose.tools import assert_almost_equal, assert_equal
 import numpy
 
 from solverls.lsproblemlinear import LSProblemLinear
-from solverls.lsproblemtimemarching import LSProblemTimeMarching
+from solverls.lsproblemtimeslab import LSProblemTimeSlab
+from solverls.lsproblemnonlinear import LSProblemNonLinear
 from solverls.mesh1d import Mesh1D
 
 __author__ = 'Alfredo Carella'
@@ -56,7 +57,7 @@ def test_problem_torsional_1v():
 
     my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
     my_problem = TorsionalProblemLinearTest(my_mesh1d)
-    my_problem.solve_linear_slab()
+    my_problem.solve()
     assert_almost_equal(my_problem.residual, 0.0, 6)
 
     # my_problem.plot()  # filename='testingProblemTorsional1v.pdf' #FIXME: Commented to avoid plotting during test execution
@@ -78,7 +79,7 @@ def test_problem_torsional_nv():
 
     my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
     my_problem = TorsionalProblemLinearTestNv(my_mesh1d)
-    my_problem.solve_linear_slab()
+    my_problem.solve()
     # assert_almost_equal(my_problem.residual, 0.0, 6)
 
     # my_problem.plot()  # filename='testingProblemTorsionalNv.pdf') #FIXME: Commented to avoid plotting during test execution
@@ -87,6 +88,23 @@ def test_problem_torsional_nv():
 
     print("range(1,1) = %r" % range(1, 1))
 
+
+def test_problem_nonlinear():
+    """Testing iterative routine for solving a non-linear problem"""
+
+    macro_grid, orders, variables = [0.0, 1.0, 2.0], [4, 4], ['f']
+    my_mesh1d = Mesh1D(macro_grid, orders, variables)
+    my_problem = TestLSProblemNonLinear(my_mesh1d)
+    my_problem.solve()
+    # my_problem.plot()
+
+    print('Test inputs:')
+    print('macro_grid = %s' % my_mesh1d.macro_grid)
+    print('orders = %s' % my_mesh1d.element_orders)
+    print('variables = %s' % my_mesh1d.variables)
+    print('')
+    print('Test outputs:')
+    print("The residual for this problem is %04.2e" % my_problem.residual)
 
 # ********************************************************** #
 # ********************** TESTING CODE ********************** #
@@ -98,7 +116,7 @@ def test_problem_torsional_nv():
 class TestLSProblemLinear1El1V(LSProblemLinear):
     """Class for testing a simple problem in 1 variable on 1 element."""
 
-    def set_equations(self, el):
+    def define_equations(self, el):
 
         op_dict = {'f.f': el.dx.dot(el.dx),
                    'f': -1.0 * numpy.ones(el.order + 1)}
@@ -118,7 +136,7 @@ class TestLSProblemLinear1El1V(LSProblemLinear):
 class TestLSProblemLinearNelNv(LSProblemLinear):
     """Class for testing a poisson problem in 2 variables on N elements."""
 
-    def set_equations(self, el):
+    def define_equations(self, el):
         op_dict = {'f.f': el.dx,
                    'f.g': -1.0 * numpy.identity(el.order + 1),
                    'f': numpy.zeros(el.order + 1),
@@ -140,10 +158,10 @@ class TestLSProblemLinearNelNv(LSProblemLinear):
         self.g_el[-1][-1] += weight * right_value
 
 
-class TorsionalProblemLinearTest(LSProblemTimeMarching):
+class TorsionalProblemLinearTest(LSProblemTimeSlab):
     """Class for testing a torsional problem in N variables on N elements."""
 
-    def set_equations(self, el):
+    def define_equations(self, el):
         op_dict = {}
 
         id_mat = numpy.identity(el.order + 1)
@@ -175,9 +193,9 @@ class TorsionalProblemLinearTest(LSProblemTimeMarching):
         self.g_el[0][5] += weight * initial_position
 
 
-class TorsionalProblemLinearTestNv(LSProblemTimeMarching):
+class TorsionalProblemLinearTestNv(LSProblemTimeSlab):
     """Class for testing a torsional problem in N variables on N elements."""
-    def set_equations(self, el):
+    def define_equations(self, el):
         op_dict = {}
         x = el.x_1v
         id_mat = numpy.identity(el.order + 1)
@@ -249,3 +267,20 @@ class TorsionalProblemLinearTestNv(LSProblemTimeMarching):
             var_index = self.mesh.elem[0].pos[var][0]
             self.k_el[0][var_index, var_index] += weight
             self.g_el[0][var_index] += weight * initial_value[var]
+
+
+class TestLSProblemNonLinear(LSProblemNonLinear):
+    """Class for testing a poisson problem in 2 variables on N elements."""
+
+    def define_equations(self, el):
+        # Solution: f(x) = 2-(x-1)^2
+        x = el.x_1v
+        f_old = self.f_old[self.mesh.gm[el.number][el.pos['f']]]
+        op_dict = {'f.f': (f_old * el.dx.T).T,  # equivalent to and faster than "numpy.diag(f_old).dot(el.dx)"
+                   'f': 2*x**3 - 6*x**2 + 2*x + 2}
+        return op_dict
+
+    def set_boundary_conditions(self):
+        weight, left_value = 1.0, 1.0
+        self.k_el[0][0, 0] += weight
+        self.g_el[0][0] += weight * left_value
