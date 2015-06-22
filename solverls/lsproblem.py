@@ -65,7 +65,7 @@ class LSProblem:
                 x_in, y_in = el.x_1v, self.f[self.mesh.gm[el.number][el.pos[var]]]
                 plt.plot(x_in, y_in, '.', markersize=8.0, color='g')
 
-                x_out = numpy.linspace(el.boundaries['x'][0], el.boundaries['x'][1], 20)
+                x_out = numpy.linspace(*el.boundaries['x'], num=20)
                 y_out = interpolant_evaluation_matrix(x_in, x_out).dot(y_in)
                 plt.plot(x_out, y_out, '-', linewidth=2.0, color='b')
 
