@@ -65,23 +65,3 @@ class Mesh1D(object):
         plt.xlabel('Independent variable coordinate')
         plt.axis([macro_grid[0], macro_grid[-1], -1, 1])
         plt.show()
-
-
-if __name__ == '__main__':
-    def minimum_mesh_example():
-        macro_grid, orders, variables = [0.0, 1.0, 2.0, 3.0], [3, 4, 2], ['Temperature', 'Pressure', 'Quality']
-        my_mesh1d = Mesh1D(macro_grid, orders, variables)
-
-        print('Test inputs:')
-        print('macro_grid = %s' % my_mesh1d.macro_grid)
-        print('orders = %s' % my_mesh1d.element_orders)
-        print('variables = %s' % my_mesh1d.variables)
-        print('')
-        print('Test outputs:')
-        first_element = my_mesh1d.elem[0]
-        print("my_mesh1d.elem[0].dx = \n%r" % first_element.dx)
-        print("my_mesh1d.elem[0].x_1v = %r" % first_element.x_1v)
-        print("my_mesh1d.elem[0].dx.dot(my_mesh1d.elem[0].w_1v) = \n%r" % first_element.dx.dot(first_element.w_1v))
-        print("my_mesh1d.gm = \n%r" % my_mesh1d.gm[0])
-        my_mesh1d.plot()
-    minimum_mesh_example()
