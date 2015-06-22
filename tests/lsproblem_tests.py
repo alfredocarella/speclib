@@ -1,7 +1,9 @@
-from nose.tools import assert_almost_equal, assert_equal
+import itertools
+
+from nose.tools import assert_almost_equal
 import numpy
 
-from solverls.lsproblemlinear import LSProblemLinear
+from solverls.lsproblemlinear import LSProblem, LSProblemLinear
 from solverls.lsproblemtimeslab import LSProblemTimeSlab
 from solverls.lsproblemnonlinear import LSProblemNonLinear
 from solverls.mesh1d import Mesh1D
@@ -9,37 +11,49 @@ from solverls.mesh1d import Mesh1D
 __author__ = 'Alfredo Carella'
 
 
+# ********************************************************** #
+# ************** NEW PRELIMINARY TESTING CODE ************** #
+# ********************************************************** #
+
+macro_grid, orders, list_of_variables = numpy.array((0.0, 2.0)), numpy.array(4), ['f']
+meshit = Mesh1D(macro_grid, orders, list_of_variables)
+
+
+class TestLSProblemLinear1El1Var(LSProblemLinear):
+    """Class for testing a simple problem in 1 variable on 1 element."""
+
+    def __init__(self):
+        LSProblem.__init__(self, meshit)
+        self.solve()
+
+    def define_equations(self, el):
+        # Solution: f(x) = 0.5 * (x^2 - (x0+x1)*x + x0*x1) + 3
+        op_dict = {'f.f': el.dx.dot(el.dx),
+                   'f': -1.0 * numpy.ones(el.order + 1)}
+        return op_dict
+
+    def set_boundary_conditions(self):
+        weight = 1.0
+        left_value = 3.0
+        right_value = 3.0
+        self.k_el[0][0, 0] += weight
+        self.g_el[0][0] += weight * left_value
+        self.k_el[-1][-1, -1] += weight
+        self.g_el[-1][-1] += weight * right_value
+
+    def test_residual_is_zero_for_problem_1el_1v(self):
+        assert_almost_equal(self.residual, 0.0)
+
+    def test_solution_is_correct_for_problem_1el_1v(self):
+        x = self.mesh.elem[0].x_1v
+        x0, x1 = self.mesh.elem[0].boundaries['x']
+        analytical_solution = -0.5 * x**2 + 0.5*(x0+x1)*x - 0.5*x0*x1 - x0**2 + 3
+        numpy.testing.assert_allclose(self.f, analytical_solution)
+
+
 # TODO: These tests are not good at all. Proper tests to be implemented immediately.
-def test_problem_1el_1v():
-    """Testing results for a simple problem (1 var, 1 elem)"""
-    macro_grid, orders, list_of_variables = numpy.array((0.0, 2.0)), numpy.array(4), ['f']
-    my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
-
-    my_problem = TestLSProblemLinear1El1V(my_mesh1d)
-    my_problem.solve()
-
-    assert_almost_equal(my_problem.residual, 0.0)
-    # numpy.testing.assert_allclose(
-        # my_problem.Ke, my_problem.opL[0].T.dot(numpy.diag(my_problem.mesh.longQuadWeights[0])).dot(my_problem.opL[
-        # 0])) #<--Missing BCs
-
-    # print("my_problem.opL = %r" % my_problem.op_l)
-    # print("my_problem.opG = %r" % my_problem.op_g)
-    # print("my_problem.Ke = %r" % my_problem.k_el)
-    # print("my_problem.Ge = %r" % my_problem.g_el)
-
-    print("The residual for this problem is %04.2e" % my_problem.residual)
-    print('\nThe solution vector is %r\n' % my_problem.f)
-
-
-def test_problem_nel_nv():
+def check_problem_nel_nv(my_mesh1d):
     """Testing a problem w/ multiple variables and elements"""
-    macro_grid, orders, list_of_variables = numpy.array((0.0, 1.0, 2.0)), numpy.array((3, 3)), ['f', 'g']
-    my_mesh1d = Mesh1D(macro_grid, orders, list_of_variables)
-    numpy.testing.assert_array_equal(my_mesh1d.macro_grid, macro_grid)
-    numpy.testing.assert_array_equal(my_mesh1d.element_orders, orders)
-    assert_equal(my_mesh1d.variables, list_of_variables)
-
     my_problem = TestLSProblemLinearNelNv(my_mesh1d)
     my_problem.solve()
     assert_almost_equal(my_problem.residual, 0.0)
@@ -106,32 +120,22 @@ def test_problem_nonlinear():
     print('Test outputs:')
     print("The residual for this problem is %04.2e" % my_problem.residual)
 
+
+def lsproblem_test_case_generator():
+    # tested_macro_grids_and_orders = [([0, 1, 2, 3],  [2, 2, 2]),
+    #                                  ([-1, 1, 2, 4], [3, 4, 2])]
+    # tested_varlists = [['f'], ['Var A', 'Var B', 'Var C']]
+    tested_macro_grids_and_orders = [([0, 1, 2],  [2, 2]),
+                                     ([0, 0.5, 1.5, 2], [3, 4, 2])]
+    tested_varlists = [['Var B', 'Var C']]
+    for (macro_grid, element_orders), var_list in itertools.product(*[tested_macro_grids_and_orders, tested_varlists]):
+        yield check_problem_nel_nv, Mesh1D(macro_grid, element_orders, var_list)
+
+
+
 # ********************************************************** #
 # ********************** TESTING CODE ********************** #
 # ********************************************************** #
-
-
-
-
-class TestLSProblemLinear1El1V(LSProblemLinear):
-    """Class for testing a simple problem in 1 variable on 1 element."""
-
-    def define_equations(self, el):
-
-        op_dict = {'f.f': el.dx.dot(el.dx),
-                   'f': -1.0 * numpy.ones(el.order + 1)}
-
-        return op_dict
-
-    def set_boundary_conditions(self):
-        weight = 1.0
-        left_value = 3.0
-        right_value = 3.0
-        self.k_el[0][0, 0] += weight
-        self.g_el[0][0] += weight * left_value
-        self.k_el[-1][-1, -1] += weight
-        self.g_el[-1][-1] += weight * right_value
-
 
 class TestLSProblemLinearNelNv(LSProblemLinear):
     """Class for testing a poisson problem in 2 variables on N elements."""
@@ -144,7 +148,6 @@ class TestLSProblemLinearNelNv(LSProblemLinear):
                    'g.f': numpy.zeros((el.order + 1, el.order + 1)),
                    'g.g': el.dx,
                    'g': -1.0 * numpy.ones(el.order + 1)}
-
         return op_dict
 
     def set_boundary_conditions(self):
@@ -284,3 +287,7 @@ class TestLSProblemNonLinear(LSProblemNonLinear):
         weight, left_value = 1.0, 1.0
         self.k_el[0][0, 0] += weight
         self.g_el[0][0] += weight * left_value
+
+
+if __name__ == "__main__":
+    pass
