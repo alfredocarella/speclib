@@ -9,15 +9,16 @@ from solverls.spectral import interpolant_evaluation_matrix
 
 
 class LSProblem:
-    def __init__(self, mesh):
-        self.mesh = mesh
+    def __init__(self, mesh=None):
         self.residual = 100.0
 
-        self.f, self.f_old = numpy.zeros(mesh.dof), numpy.zeros(mesh.dof)
-        self.op_l = [None] * len(self.mesh.gm)
-        self.op_g = [None] * len(self.mesh.gm)
-        self.k_el = [None] * len(self.mesh.gm)
-        self.g_el = [None] * len(self.mesh.gm)
+        if mesh:
+            self.mesh = mesh
+            self.f, self.f_old = numpy.zeros(mesh.dof), numpy.zeros(mesh.dof)
+            self.op_l = [None] * len(self.mesh.gm)
+            self.op_g = [None] * len(self.mesh.gm)
+            self.k_el = [None] * len(self.mesh.gm)
+            self.g_el = [None] * len(self.mesh.gm)
 
     def set_problem(self):
         for element in self.mesh.elem:
@@ -80,10 +81,10 @@ class LSProblem:
         return fig
 
     def define_equations(self, el):
-        raise NotImplementedError("Child classes must implement this method.")
+        raise NotImplementedError("Method not implemented in child class.")
 
     def set_boundary_conditions(self):
-        raise NotImplementedError("Child classes must implement this method.")
+        raise NotImplementedError("Method not implemented in child class.")
 
     def solve(self):
-        raise NotImplementedError("Child classes must implement this method.")
+        raise NotImplementedError("Method not implemented in child class.")

@@ -11,20 +11,8 @@ from solverls.mesh1d import Mesh1D
 __author__ = 'Alfredo Carella'
 
 
-# ********************************************************** #
-# ************** NEW PRELIMINARY TESTING CODE ************** #
-# ********************************************************** #
-
-macro_grid, orders, list_of_variables = numpy.array((0.0, 2.0)), numpy.array(4), ['f']
-meshit = Mesh1D(macro_grid, orders, list_of_variables)
-
-
 class TestLSProblemLinear1El1Var(LSProblemLinear):
-    """Class for testing a simple problem in 1 variable on 1 element."""
-
-    def __init__(self):
-        LSProblem.__init__(self, meshit)
-        self.solve()
+    """Class for testing a simple Poisson problem in 1 variable on 1 element."""
 
     def define_equations(self, el):
         # Solution: f(x) = 0.5 * (x^2 - (x0+x1)*x + x0*x1) + 3
@@ -36,33 +24,95 @@ class TestLSProblemLinear1El1Var(LSProblemLinear):
         weight = 1.0
         left_value = 3.0
         right_value = 3.0
+        order = self.mesh.elem[-1].order
         self.k_el[0][0, 0] += weight
         self.g_el[0][0] += weight * left_value
-        self.k_el[-1][-1, -1] += weight
-        self.g_el[-1][-1] += weight * right_value
+        self.k_el[-1][order, order] += weight
+        self.g_el[-1][order] += weight * right_value
 
-    def test_residual_is_zero_for_problem_1el_1v(self):
+    def get_analytical_solution(self):
+        x0 = self.mesh.elem[0].boundaries['x'][0]
+        x1 = self.mesh.elem[-1].boundaries['x'][1]
+        x = x0
+        for el in self.mesh.elem:
+            x = numpy.append(x, el.x_1v[1:])
+        analytical_solution = 0.5 * (-1 * x ** 2 + (x0 + x1) * x - x0 * x1) + 3
+        return analytical_solution
+
+    def test_mesh_generator(self):
+        macro_grids = [[0, 2], [-1, 4]]
+        orders = [4, 7]
+        for macro_grid, order in itertools.product(macro_grids, orders):
+            yield self.check_residual_and_solution, Mesh1D(macro_grid, order, ['f'])
+
+    def check_residual_and_solution(self, prob_mesh):
+        LSProblem.__init__(self, prob_mesh)
+        self.solve()
         assert_almost_equal(self.residual, 0.0)
-
-    def test_solution_is_correct_for_problem_1el_1v(self):
-        x = self.mesh.elem[0].x_1v
-        x0, x1 = self.mesh.elem[0].boundaries['x']
-        analytical_solution = -0.5 * x**2 + 0.5*(x0+x1)*x - 0.5*x0*x1 - x0**2 + 3
-        numpy.testing.assert_allclose(self.f, analytical_solution)
+        numpy.testing.assert_allclose(self.f[0:prob_mesh.dof_1v], *[self.get_analytical_solution()])
 
 
-# TODO: These tests are not good at all. Proper tests to be implemented immediately.
-def check_problem_nel_nv(my_mesh1d):
-    """Testing a problem w/ multiple variables and elements"""
-    my_problem = TestLSProblemLinearNelNv(my_mesh1d)
-    my_problem.solve()
-    assert_almost_equal(my_problem.residual, 0.0)
+class TestLSProblemLinearNEl2Var(TestLSProblemLinear1El1Var):
+    """Class for testing a simple Poisson problem in 2 variables on N elements."""
 
-    # my_problem.plot(['f', 'g'], 'testingProblemNelNv.pdf') #FIXME: Commented to avoid plotting during test execution
+    def define_equations(self, el):
+        # Solution: f(x) = 0.5 * (x^2 - (x0+x1)*x + x0*x1) + 3
+        op_dict = {'f.f': el.dx,
+                   'f.g': -1.0 * numpy.identity(el.order + 1),
+                   'f': numpy.zeros(el.order + 1),
 
-    print("The residual for this problem is %04.2e" % my_problem.residual)
+                   'g.f': numpy.zeros((el.order + 1, el.order + 1)),
+                   'g.g': el.dx,
+                   'g': -1.0 * numpy.ones(el.order + 1)}
+        return op_dict
+
+    def test_mesh_generator(self):
+        tested_macro_grids_and_orders = [([0, 2],  [4]),
+                                         ([0, 1, 2], [2, 2]),
+                                         ([-0.5, 1.5, 2.3, 3], [4, 3, 2])]
+        for (macro_grid, order) in tested_macro_grids_and_orders:
+            yield self.check_residual_and_solution, Mesh1D(macro_grid, order, ['f', 'g'])
 
 
+class TestLSProblemNonLinearKK(LSProblemNonLinear):
+    """Class for testing a poisson problem in 2 variables on N elements."""
+
+    def define_equations(self, el):
+        # Solution: f(x) = 2-(x-1)^2
+        x = el.x_1v
+        f_old = self.f_old[self.mesh.gm[el.number][el.pos['f']]]
+        op_dict = {'f.f': (f_old * el.dx.T).T,  # equivalent to and faster than "numpy.diag(f_old).dot(el.dx)"
+                   'f': 2*x**3 - 6*x**2 + 2*x + 2}
+        return op_dict
+
+    def set_boundary_conditions(self):
+        weight, left_value = 1.0, 1.0
+        self.k_el[0][0, 0] += weight
+        self.g_el[0][0] += weight * left_value
+
+    def get_analytical_solution(self):
+        x0 = self.mesh.elem[0].boundaries['x'][0]
+        x1 = self.mesh.elem[-1].boundaries['x'][1]
+        x = x0
+        for el in self.mesh.elem:
+            x = numpy.append(x, el.x_1v[1:])
+        analytical_solution = 2 - (x - 1) ** 2  # assume f(0) = 1
+        return analytical_solution
+
+    def test_mesh_generator(self):
+        tested_macro_grids_and_orders = [([0, 1, 2],  [4, 4]),
+                                         ([0.0, 1, 1.5, 2.0], [4, 3, 3])]
+        for (macro_grid, order) in tested_macro_grids_and_orders:
+            yield self.check_residual_and_solution, Mesh1D(macro_grid, order, ['f'])
+
+    def check_residual_and_solution(self, prob_mesh):
+        LSProblem.__init__(self, prob_mesh)
+        self.solve()
+        assert_almost_equal(self.residual, 0.0)
+        numpy.testing.assert_allclose(self.f[0:prob_mesh.dof_1v], *[self.get_analytical_solution()])
+
+
+# TODO: The following code still needs to be refactored
 def test_problem_torsional_1v():
     """Testing a torsional vibration problem (1 mass)"""
     macro_grid = numpy.linspace(0.0, 30.0, 50)
@@ -103,63 +153,9 @@ def test_problem_torsional_nv():
     print("range(1,1) = %r" % range(1, 1))
 
 
-def test_problem_nonlinear():
-    """Testing iterative routine for solving a non-linear problem"""
-
-    macro_grid, orders, variables = [0.0, 1.0, 2.0], [4, 4], ['f']
-    my_mesh1d = Mesh1D(macro_grid, orders, variables)
-    my_problem = TestLSProblemNonLinear(my_mesh1d)
-    my_problem.solve()
-    # my_problem.plot()
-
-    print('Test inputs:')
-    print('macro_grid = %s' % my_mesh1d.macro_grid)
-    print('orders = %s' % my_mesh1d.element_orders)
-    print('variables = %s' % my_mesh1d.variables)
-    print('')
-    print('Test outputs:')
-    print("The residual for this problem is %04.2e" % my_problem.residual)
-
-
-def lsproblem_test_case_generator():
-    # tested_macro_grids_and_orders = [([0, 1, 2, 3],  [2, 2, 2]),
-    #                                  ([-1, 1, 2, 4], [3, 4, 2])]
-    # tested_varlists = [['f'], ['Var A', 'Var B', 'Var C']]
-    tested_macro_grids_and_orders = [([0, 1, 2],  [2, 2]),
-                                     ([0, 0.5, 1.5, 2], [3, 4, 2])]
-    tested_varlists = [['Var B', 'Var C']]
-    for (macro_grid, element_orders), var_list in itertools.product(*[tested_macro_grids_and_orders, tested_varlists]):
-        yield check_problem_nel_nv, Mesh1D(macro_grid, element_orders, var_list)
-
-
-
 # ********************************************************** #
 # ********************** TESTING CODE ********************** #
 # ********************************************************** #
-
-class TestLSProblemLinearNelNv(LSProblemLinear):
-    """Class for testing a poisson problem in 2 variables on N elements."""
-
-    def define_equations(self, el):
-        op_dict = {'f.f': el.dx,
-                   'f.g': -1.0 * numpy.identity(el.order + 1),
-                   'f': numpy.zeros(el.order + 1),
-
-                   'g.f': numpy.zeros((el.order + 1, el.order + 1)),
-                   'g.g': el.dx,
-                   'g': -1.0 * numpy.ones(el.order + 1)}
-        return op_dict
-
-    def set_boundary_conditions(self):
-        weight = 1.0
-        left_value = 3.0
-        right_value = -1.0
-
-        self.k_el[0][0, 0] += weight
-        self.g_el[0][0] += weight * left_value
-        self.k_el[-1][-1, -1] += weight
-        self.g_el[-1][-1] += weight * right_value
-
 
 class TorsionalProblemLinearTest(LSProblemTimeSlab):
     """Class for testing a torsional problem in N variables on N elements."""
@@ -272,22 +268,6 @@ class TorsionalProblemLinearTestNv(LSProblemTimeSlab):
             self.g_el[0][var_index] += weight * initial_value[var]
 
 
-class TestLSProblemNonLinear(LSProblemNonLinear):
-    """Class for testing a poisson problem in 2 variables on N elements."""
-
-    def define_equations(self, el):
-        # Solution: f(x) = 2-(x-1)^2
-        x = el.x_1v
-        f_old = self.f_old[self.mesh.gm[el.number][el.pos['f']]]
-        op_dict = {'f.f': (f_old * el.dx.T).T,  # equivalent to and faster than "numpy.diag(f_old).dot(el.dx)"
-                   'f': 2*x**3 - 6*x**2 + 2*x + 2}
-        return op_dict
-
-    def set_boundary_conditions(self):
-        weight, left_value = 1.0, 1.0
-        self.k_el[0][0, 0] += weight
-        self.g_el[0][0] += weight * left_value
-
-
 if __name__ == "__main__":
-    pass
+    my_test = TestLSProblemLinearNEl2Var()
+    my_test.test_input_generator_Nel_2var()
