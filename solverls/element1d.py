@@ -7,7 +7,12 @@ __author__ = 'Alfredo Carella'
 
 
 class Element1D:
-    """Spectral 1D element. One of the elementary blocks that compose a mesh"""
+    """Spectral 1D element. One of the elementary blocks that compose a mesh
+
+>>> Element1D([0, 1], 3, ['f'])
+Element1D({'x': [0, 1]}, 3, ['f'])
+
+    """
 
     def __init__(self, boundaries, order, variables, number=-1):
         # Numbering
@@ -23,6 +28,9 @@ class Element1D:
         # Differentiation
         self.jac = (boundaries[1] - boundaries[0]) / 2.0
         self.dx = gll_derivative_matrix(self.order) / self.jac
+
+    def __repr__(self):
+        return 'Element1D(' + str(self.boundaries) + ', ' + str(self.order) + ', ' + str(self.variables) + ')'
 
     def create_variable_indices(self):
         pos = {}
