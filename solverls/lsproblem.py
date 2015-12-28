@@ -15,10 +15,10 @@ class LSProblem:
         if mesh:
             self.mesh = mesh
             self.f, self.f_old = numpy.zeros(mesh.dof), numpy.zeros(mesh.dof)
-            self.op_l = [None] * len(self.mesh.gm)
-            self.op_g = [None] * len(self.mesh.gm)
-            self.k_el = [None] * len(self.mesh.gm)
-            self.g_el = [None] * len(self.mesh.gm)
+            self.op_l = [None for _ in range(len(self.mesh.gm))]
+            self.op_g = [None for _ in range(len(self.mesh.gm))]
+            self.k_el = [None for _ in range(len(self.mesh.gm))]
+            self.g_el = [None for _ in range(len(self.mesh.gm))]
 
     def set_problem(self):
         for element in self.mesh.elem:
