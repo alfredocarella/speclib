@@ -19,12 +19,15 @@ Element1D({'x': [0, 1]}, 3, ['f'])
         self.number = number
         self.order = order
         self.variables = variables
-        self.pos = self.create_variable_indices()
+        self.pos = {var: numpy.arange(0, self.order+1) + idx * (self.order+1)
+                    for idx, var in enumerate(self.variables)}
+
         # Geometry
         self.boundaries = {'x': boundaries}
         self.x_1v, self.w_1v = gll(self.order, *boundaries)
         self.w_nv = numpy.tile(self.w_1v, len(variables))
         self.x_nv = numpy.tile(self.x_1v, len(variables))
+
         # Differentiation
         self.jac = (boundaries[1] - boundaries[0]) / 2.0
         self.dx = gll_derivative_matrix(self.order) / self.jac
@@ -32,9 +35,3 @@ Element1D({'x': [0, 1]}, 3, ['f'])
     def __repr__(self):
         return 'Element1D(' + str(self.boundaries) + ', ' + str(self.order) + ', ' + str(self.variables) + ')'
 
-    def create_variable_indices(self):
-        pos = {}
-        dof_local = (self.order + 1)
-        for idx, var in enumerate(self.variables):
-            pos[var] = numpy.arange(idx * dof_local, (idx + 1) * dof_local)
-        return pos

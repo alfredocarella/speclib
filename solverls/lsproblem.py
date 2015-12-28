@@ -32,7 +32,7 @@ class LSProblem:
         element_size = (el.order + 1) * len(el.variables)
         self.op_l[el.number] = numpy.zeros((element_size, element_size))
         for (row, col) in itertools.product(self.mesh.variables, repeat=2):
-            if (row+'.'+col) in op_dict:
+            if (row+'.'+col) in op_dict.keys():
                 self.op_l[el.number][numpy.ix_(el.pos[row], el.pos[col])] += op_dict[row + '.' + col]
 
         self.op_g[el.number] = numpy.zeros(element_size)
